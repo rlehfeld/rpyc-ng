@@ -3,7 +3,7 @@ of *magic*, so beware.
 """
 import sys
 import types
-from rpyc.lib import get_methods, get_id_pack
+from rpyc.lib import get_methods, get_id_pack, ObjectType
 from rpyc.lib.compat import pickle, maxint
 from rpyc.core import consts
 
@@ -344,7 +344,8 @@ def class_factory(id_pack, methods):
                 elif _class is None:
                     class_descriptor = NetrefClass(type(_module))
                 break
-    ns['__class__'] = class_descriptor
+    if class_descriptor is not None:
+        ns['__class__'] = class_descriptor
     # create methods that must perform a syncreq
     for name, doc in methods:
         name = str(name)  # IronPython issue #10

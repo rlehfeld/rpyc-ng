@@ -8,11 +8,18 @@ import logging
 import threading
 import time
 import random
+from enum import IntEnum, auto
 from rpyc.lib.compat import maxint  # noqa: F401
 
 
 SPAWN_THREAD_PREFIX = 'RpycSpawnThread'
 WORKER_THREAD_PREFIX = 'RpycWorkerThread'
+
+
+class ObjectType(IntEnum):
+    MODULE = auto()
+    CLASS = auto()
+    INSTANCE = auto()
 
 
 class MissingModule(object):
@@ -204,30 +211,24 @@ def get_id_pack(obj):
     if inspect.ismodule(obj):
         # Handle instances of the module class. Since inspect.ismodule(obj) is False,
         # the module class id pack must have zero for the instance object id.
-        if inspect.ismodule(obj) and obj_name != 'module':
+        if obj_name != 'module':
             if obj_name in sys.modules:
                 name_pack = obj_name
             else:
                 obj_cls = getattr(obj, '__class__', type(obj))
                 name_pack = f'{obj_cls.__module__}.{obj_name}'
                 return (name_pack, id(obj_cls), id(obj))
-        elif inspect.ismodule(obj):
-            name_pack = '{obj.__module__}.{obj_name}'
         else:
-            obj_module = getattr(obj, '__module__', undef)
-            if obj_module is not undef:
-                name_pack = f'{obj.__module__}.{obj_name}'
-            else:
-                name_pack = obj_name
-        return (name_pack, id(type(obj)), id(obj))
+            name_pack = '{obj.__module__}.{obj_name}'
+        return (name_pack, id(type(obj)), id(obj), ObjectType.MODULE.value)
 
     if not inspect.isclass(obj):
         obj_cls = getattr(obj, '__class__', type(obj))
         name_pack = f'{obj_cls.__module__}.{obj_cls.__name__}'
-        return (name_pack, id(obj_cls), id(obj))
+        return (name_pack, id(obj_cls), id(obj), ObjectType.INSTANCE.value)
 
     name_pack = f'{obj.__module__}.{obj_name}'
-    return (name_pack, id(obj), 0)
+    return (name_pack, id(obj), 0, ObjectType.CLASS.value)
 
 
 def get_methods(obj_attrs, obj):

@@ -19,15 +19,15 @@ class Test_SSL(unittest.TestCase):
     '''Created keys/certs like https://gist.github.com/soarez/9688998
     # Server key
     openssl genrsa -out server.key 4096
-    openssl req -new -x509 -key server.key -out server.crt
+    openssl req -new -x509 -days 3650 -key server.key -out server.crt
     # Client key
     openssl genrsa -out client.key 4096
     openssl req -new -key client.key -out client.csr
-    openssl x509 -req -in  client.csr  -CA server.crt -CAkey server.key -out client.crt
+    openssl x509 -days 3650 -req -in  client.csr  -CA server.crt -CAkey server.key -out client.crt
     # Client2 key
     openssl genrsa -out client2.key 4096
     openssl req -new -key client2.key -out client2.csr
-    openssl x509 -req -in  client2.csr  -CA client.crt -CAkey client.key -out client2.crt
+    openssl x509 -days 3650 -req -in  client2.csr  -CA client.crt -CAkey client.key -out client2.crt
     # Create bundle
     cat client.crt server.crt > client-server.bundle.crt
     '''

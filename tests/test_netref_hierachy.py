@@ -211,7 +211,7 @@ class Test_Netref_Hierarchy(unittest.TestCase):
         remote_module_cls = self.conn.modules.builtins.type(self.conn.modules.sys)
         remote_module_cls_id = self.conn.modules.builtins.id(remote_module_cls)
         self.assertEqual(repr(remote_module_cls), "<class 'module'>")
-        self.assertEqual(remote_module_cls.____id_pack__, ('builtins.module', remote_module_cls_id, 0))
+        self.assertEqual(remote_module_cls.____id_pack__[0:3], ('builtins.module', remote_module_cls_id, 0))
 
     def test_proxy_instancecheck(self):
         self.assertIsInstance(self.conn.modules.builtins.RuntimeError(), Exception)
