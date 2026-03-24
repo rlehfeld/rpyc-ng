@@ -215,15 +215,15 @@ def get_id_pack(obj):
             if obj_name in sys.modules:
                 name_pack = obj_name
             else:
-                obj_cls = getattr(obj, '__class__', type(obj))
+                obj_cls = type(obj)
                 name_pack = f'{obj_cls.__module__}.{obj_name}'
                 return (name_pack, id(obj_cls), id(obj))
         else:
-            name_pack = '{obj.__module__}.{obj_name}'
+            name_pack = f'{obj.__module__}.{obj_name}'
         return (name_pack, id(type(obj)), id(obj), ObjectType.MODULE.value)
 
     if not inspect.isclass(obj):
-        obj_cls = getattr(obj, '__class__', type(obj))
+        obj_cls = type(obj)
         name_pack = f'{obj_cls.__module__}.{obj_cls.__name__}'
         return (name_pack, id(obj_cls), id(obj), ObjectType.INSTANCE.value)
 
