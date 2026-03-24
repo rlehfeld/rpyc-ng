@@ -382,7 +382,7 @@ class Connection(object):
         elif id_pack[1:] != cls_id_pack:
             cls = self.sync_request(consts.HANDLE_TYPE, id_pack)
             assert cls.____id_pack__[1:] == cls_id_pack, (
-                f"{cls.____id_pack__!r} != {cls_id_pack!r}"
+                f"{cls.____id_pack__=!r} != {cls_id_pack=!r}, {id_pack=!r}"
             )
             self._netref_classes_cache[cls_id_pack] = cls
         else:
