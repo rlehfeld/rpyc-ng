@@ -39,8 +39,7 @@ class MyService(rpyc.Service):
         return list
 
     def exposed_getlistinstance(self):
-        return [
-            1, 2, 3]
+        return [1, 2, 3]
 
     def foobar(self):
         assert False
@@ -204,7 +203,7 @@ class Test_Netref_Hierarchy(unittest.TestCase):
         """
         # instance module assertions
         self.assertEqual(repr(self.conn.modules.unittest), repr(unittest))
-        self.assertEqual(repr(type(self.conn.modules.unittest)), "<netref class 'rpyc.core.netref.unittest'>")
+        self.assertEqual(repr(type(self.conn.modules.unittest)), "<class 'module'>")
         self.assertIs(self.conn.modules.unittest.__class__, type(unittest))
         self.assertIs(type(self.conn.modules.unittest.__class__), type)
         # class module assertions

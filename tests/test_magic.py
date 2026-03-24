@@ -6,7 +6,6 @@ is_py3 = sys.version_info >= (3,)
 
 
 class Meta(type):
-
     def __hash__(self):
         return 4321
 

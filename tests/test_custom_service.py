@@ -38,7 +38,7 @@ class MyService(rpyc.Service):
         x2, y2 = p2
         return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
-    def exposed_getlist(self):
+    def exposed_getlistinstance(self):
         return [1, 2, 3]
 
     def foobar(self):
@@ -110,8 +110,8 @@ class TestCustomService(unittest.TestCase):
     def test_attributes(self):
         self.conn.root.distance
         self.conn.root.exposed_distance
-        self.conn.root.getlist
-        self.conn.root.exposed_getlist
+        self.conn.root.getlistinstance
+        self.conn.root.exposed_getlistinstance
         # this is not an exposed attribute:
         self.assertRaises(AttributeError, lambda: self.conn.root.foobar())
         # methods exposed using decorator
@@ -124,7 +124,7 @@ class TestCustomService(unittest.TestCase):
         self.assertEqual(smc.foo(), 'ab')
 
     def test_safeattrs(self):
-        x = self.conn.root.getlist()
+        x = self.conn.root.getlistinstance()
         # self.require(x == [1, 2, 3]) -- can't compare remote objects, sorry
         # self.require(x * 2 == [1, 2, 3, 1, 2, 3])
         self.assertEqual([y * 2 for y in x], [2, 4, 6])
@@ -134,8 +134,8 @@ class TestCustomService(unittest.TestCase):
         print(x)
 
     def test_instancecheck_list(self):
-        remote_list = self.conn.root.getlist()
-        self.assertTrue(self.conn.root.instance(remote_list, list))
+        remote_listinstance = self.conn.root.getlistinstance()
+        self.assertTrue(self.conn.root.instance(remote_listinstance, list))
 
 
 if __name__ == "__main__":

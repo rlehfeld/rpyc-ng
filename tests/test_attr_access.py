@@ -181,7 +181,7 @@ class TestConfigAllows(unittest.TestCase):
         self.assertEqual(obj.foobar(), "Fee Fie Foe Foo")
         self.assertEqual(obj.exposed_foobar(), "Fee Fie Foe Foo")
         self.assertRaises(AttributeError, lambda: obj._privy)
-        self.assertRaises(AttributeError, lambda: obj + 'bar')
+        self.assertRaises(TypeError, lambda: obj + 'bar')
         self.assertRaises(AttributeError, lambda: obj.foo)
         self.assertRaises(AttributeError, lambda: obj.bar)
         self.assertRaises(AttributeError, lambda: obj.spam)

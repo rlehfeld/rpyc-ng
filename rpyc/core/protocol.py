@@ -12,7 +12,7 @@ import threading
 
 from weakref import ref
 from threading import Lock, Condition, RLock
-from rpyc.lib import worker, spawn, Timeout, get_methods, get_id_pack, hasattr_static
+from rpyc.lib import worker, spawn, Timeout, get_methods, get_id_pack, hasattr_static, ObjectType
 from rpyc.lib.compat import pickle, next, maxint, select_error, acquire_lock  # noqa: F401
 from rpyc.lib.colls import WeakValueDict, RefCountingColl
 from rpyc.core import consts, brine, vinegar, netref
@@ -345,7 +345,7 @@ class Connection(object):
             return consts.LABEL_VALUE, obj
         if type(obj) is tuple:
             return consts.LABEL_TUPLE, tuple(self._box(item) for item in obj)
-        elif isinstance(obj, netref.BaseNetref) and obj.____conn__ is self:
+        if (isinstance(obj, netref.BaseNetref) or type(obj) is netref.NetrefMetaclass) and obj.____conn__ is self:
             return consts.LABEL_LOCAL_REF, obj.____id_pack__
         else:
             id_pack = get_id_pack(obj)
@@ -376,27 +376,30 @@ class Connection(object):
 
     def _netref_factory(self, id_pack):  # boxing
         """id_pack is for remote, so when class id fails to directly match """
-        cls = None
-        if id_pack[2] == 0 and id_pack in self._netref_classes_cache:
-            cls = self._netref_classes_cache[id_pack]
-        elif id_pack[0] in netref.builtin_classes_cache:
-            cls = netref.builtin_classes_cache[id_pack[0]]
-        if cls is None:
+        cls_id_pack = (id_pack[1], 0, ObjectType.CLASS.value)
+        if cls_id_pack in self._netref_classes_cache:
+            cls = self._netref_classes_cache[cls_id_pack]
+        elif id_pack[1:] != cls_id_pack:
+            cls = self.sync_request(consts.HANDLE_TYPE, id_pack)
+            assert cls.____id_pack__[1:] == cls_id_pack, (
+                f"{cls.____id_pack__!r} != {cls_id_pack!r}"
+            )
+            self._netref_classes_cache[cls_id_pack] = cls
+        else:
+            # id_pack == cls_id_pack case
             # in the future, it could see if a sys.module cache/lookup hits first
             cls_methods = self.sync_request(consts.HANDLE_INSPECT, id_pack)
-            cls = netref.class_factory(id_pack, cls_methods)
-            if id_pack[2] == 0:
-                # only use cached netrefs for classes
-                # ... instance caching after gc of a proxy will take some mental gymnastics
-                self._netref_classes_cache[id_pack] = cls
-        return cls(self, id_pack)
+            cls = netref.class_factory(id_pack, cls_methods, self)
+            self._netref_classes_cache[cls_id_pack] = cls
+            return cls
+        return cls.____bind_instance__(self, id_pack)
 
     def _dispatch_request(self, seq, raw_args):  # dispatch
         try:
             handler, args = raw_args
             args = self._unbox(args)
             res = self._HANDLERS[handler](self, *args)
-        except:  # TODO: revisit how to catch handle locally, this should simplify when py2 is dropped
+        except:
             # need to catch old style exceptions too
             t, v, tb = sys.exc_info()
             self._last_traceback = tb
@@ -803,7 +806,7 @@ class Connection(object):
         plain |= config["allow_exposed_attrs"] and name.startswith(prefix)
         plain |= config["allow_safe_attrs"] and name in config["safe_attrs"]
         plain |= config["allow_public_attrs"] and not name.startswith("_")
-        has_exposed = prefix and (hasattr(obj, prefix + name) or hasattr_static(obj, prefix + name))
+        has_exposed = prefix and not name.startswith(prefix) and (hasattr(obj, prefix + name) or hasattr_static(obj, prefix + name))
         if plain and (not has_exposed or hasattr(obj, name)):
             return name
         if has_exposed:
@@ -833,12 +836,12 @@ class Connection(object):
             consts.HANDLE_DELATTR: cls._handle_delattr,
             consts.HANDLE_SETATTR: cls._handle_setattr,
             consts.HANDLE_CALL: cls._handle_call,
-            consts.HANDLE_CALLATTR: cls._handle_callattr,
             consts.HANDLE_REPR: cls._handle_repr,
             consts.HANDLE_STR: cls._handle_str,
             consts.HANDLE_BOOL: cls._handle_bool,
             consts.HANDLE_CMP: cls._handle_cmp,
             consts.HANDLE_HASH: cls._handle_hash,
+            consts.HANDLE_TYPE: cls._handle_type,
             consts.HANDLE_INSTANCECHECK: cls._handle_instancecheck,
             consts.HANDLE_SUBCLASSCHECK: cls._handle_subclasscheck,
             consts.HANDLE_DIR: cls._handle_dir,
@@ -906,10 +909,6 @@ class Connection(object):
     def _handle_setattr(self, obj, name, value):  # request handler
         return self._access_attr(obj, name, (value,), "_rpyc_setattr", "allow_setattr", setattr)
 
-    def _handle_callattr(self, obj, name, args, kwargs=()):  # request handler
-        obj = self._handle_getattr(obj, name)
-        return self._handle_call(obj, args, kwargs)
-
     def _handle_ctxexit(self, obj, exc):  # request handler
         if exc:
             try:
@@ -919,6 +918,16 @@ class Connection(object):
         else:
             typ = tb = None
         return self._handle_getattr(obj, "__exit__")(exc, typ, tb)
+
+    def _handle_type(self, id_pack):  # request handler
+        if hasattr(self._local_objects[id_pack], '____conn__'):
+            # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
+            # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
+            # see issue #346 or tests.test_rpyc_over_rpyc.Test_rpyc_over_rpyc
+            conn = self._local_objects[id_pack].____conn__
+            return conn.sync_request(consts.HANDLE_TYPE, id_pack)
+        else:
+            return type(self._local_objects[id_pack])
 
     def _handle_instancecheck(self, obj, other_id_pack):
         if hasattr(obj, '____conn__'):  # keep unwrapping!
