@@ -6,7 +6,10 @@ import sys
 import os
 import socket
 import errno
-import fcntl
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
 import threading
 from rpyc.lib import safe_import, Timeout, worker, socket_backoff_connect
 from rpyc.lib.compat import poll, select_error, BYTES_LITERAL, get_exc_errno, maxint  # noqa: F401
@@ -411,8 +414,9 @@ class PipeStream(Stream):
 
     def _readthread(self, incoming):
         fd = incoming.fileno()
-        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+        if fcntl is not None:
+            flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+            fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
         p = poll()
         p.register(fd, "r")
