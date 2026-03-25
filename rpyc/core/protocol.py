@@ -471,9 +471,7 @@ class Connection(object):
             self._receiving = True
 
         try:
-            print(f"entering poll {self!r}", file=sys.stderr)
             data = self._channel.poll(timeout, lambda: not waiting()) and self._channel.recv()
-            print(f"leaving poll {self!r}, {bool(data)=!r}", file=sys.stderr)
 
         except Exception as exc:
             if isinstance(exc, EOFError):
