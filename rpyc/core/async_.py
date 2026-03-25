@@ -31,15 +31,17 @@ class AsyncResult:
         return f"<AsyncResult object ({state}) at 0x{id(self):08x}>"
 
     def __call__(self, is_exc, obj):
-        if self.expired:
-            print("got call for ready but expired", file=sys.__stderr__)
-            return
-        self._is_exc = is_exc
-        self._obj = obj
-        self._is_ready = True
-        for cb in self._callbacks:
-            cb(self)
-        del self._callbacks[:]
+        try:
+            if self.expired:
+                return
+            self._is_exc = is_exc
+            self._obj = obj
+            self._is_ready = True
+            for cb in self._callbacks:
+                cb(self)
+            del self._callbacks[:]
+        finally:
+            print(f"result {self!r}", file=sys.__stderr__)
 
     def wait(self):
         """Waits for the result to arrive. If the AsyncResult object has an
@@ -49,7 +51,7 @@ class AsyncResult:
             # Serve the connection since we are not ready. Suppose
             # the reply for our seq is served. The callback is this class
             # so __call__ sets our obj and _is_ready to true.
-            print("waiting reply", file=sys.__stderr__)
+            print(f"waiting {self!r}", file=sys.__stderr__)
             self._conn.serve(self._ttl, waiting=self._waiting)
 
         # Check if we timed out before result was ready
