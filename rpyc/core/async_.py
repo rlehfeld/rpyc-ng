@@ -52,7 +52,10 @@ class AsyncResult:
             # the reply for our seq is served. The callback is this class
             # so __call__ sets our obj and _is_ready to true.
             print(f"waiting {self!r}", file=sys.__stderr__)
-            self._conn.serve(self._ttl, waiting=self._waiting)
+            try:
+                self._conn.serve(self._ttl, waiting=self._waiting)
+            finally:
+                print(f"waited {self!r}", file=sys.__stderr__)
 
         # Check if we timed out before result was ready
         if not self._is_ready:

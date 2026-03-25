@@ -303,11 +303,9 @@ class Connection(object):
                 else:
                     this_thread.decr()
 
-        print("queue message", file=sys.__stderr__)
         with self._sendlock:
             self._send_queue.append(data)
             if self._sending:
-                print("quick jump out", file=sys.__stderr__)
                 return
 
             try:
@@ -316,11 +314,9 @@ class Connection(object):
                 while self._send_queue:
                     data = self._send_queue.pop(0)
                     with _UnlockGuard(self._sendlock):
-                        print("sending data", file=sys.__stderr__)
                         self._channel.send(data)
 
             finally:
-                print(f"send queue {len(self._send_queue)=}", file=sys.__stderr__)
                 self._sending = False
 
     def _box(self, obj):  # boxing
