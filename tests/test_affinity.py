@@ -8,10 +8,12 @@ import rpyc
 class Test_Affinity(unittest.TestCase):
     """To find race conditions we vary processor affinity (CPU pinning) settings.
 
-    GIL tends to context switch more frequently when more CPU cores are available. By running binding this PID
-    to one CPU core, more ticks will occur between each context switch. Increasing the number of CPU cores we are bound to
-    will run be able to test RPyC with more frequent context switching. The aim is to find contention between threads for
-    the socket that result in undesired behavior (e.g. a reply never making it to the right thread).
+    GIL tends to context switch more frequently when more CPU cores are
+    available. By running binding this PID to one CPU core, more ticks will
+    occur between each context switch. Increasing the number of CPU cores we
+    are bound to will run be able to test RPyC with more frequent context
+    switching. The aim is to find contention between threads for the socket
+    that result in undesired behavior (e.g. a reply never making it to the right thread).
 
     Python Thread Visualization: http://www.dabeaz.com/GIL/gilvis/fourthread.html
     """
