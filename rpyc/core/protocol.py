@@ -361,6 +361,7 @@ class Connection(object):
         if cls_id_pack in self._netref_classes_cache:
             cls = self._netref_classes_cache[cls_id_pack]
         elif id_pack[1:] != cls_id_pack:
+            print(id_pack, file=sys.__stderr__)
             cls = self.sync_request(consts.HANDLE_TYPE, id_pack)
             assert cls.____id_pack__[1:] == cls_id_pack, (
                 f"{cls.____id_pack__=!r} != {cls_id_pack=!r}, {id_pack=!r}"
@@ -380,7 +381,7 @@ class Connection(object):
             handler, args = raw_args
             args = self._unbox(args)
             res = self._HANDLERS[handler](self, *args)
-        except:
+        except BaseException:
             # need to catch old style exceptions too
             t, v, tb = sys.exc_info()
             self._last_traceback = tb
@@ -780,7 +781,10 @@ class Connection(object):
         plain |= config["allow_exposed_attrs"] and name.startswith(prefix)
         plain |= config["allow_safe_attrs"] and name in config["safe_attrs"]
         plain |= config["allow_public_attrs"] and not name.startswith("_")
-        has_exposed = prefix and not name.startswith(prefix) and (hasattr(obj, prefix + name) or hasattr_static(obj, prefix + name))
+        has_exposed = (
+            prefix and not name.startswith(prefix) and
+            (hasattr(obj, prefix + name) or hasattr_static(obj, prefix + name))
+        )
         if plain and (not has_exposed or hasattr(obj, name)):
             return name
         if has_exposed:
@@ -894,14 +898,18 @@ class Connection(object):
         return self._handle_getattr(obj, "__exit__")(exc, typ, tb)
 
     def _handle_type(self, id_pack):  # request handler
-        if hasattr(self._local_objects[id_pack], '____conn__'):
-            # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
-            # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
-            # see issue #346 or tests.test_rpyc_over_rpyc.Test_rpyc_over_rpyc
-            conn = self._local_objects[id_pack].____conn__
-            return conn.sync_request(consts.HANDLE_TYPE, id_pack)
-        else:
-            return type(self._local_objects[id_pack])
+        print(f"in handle_type {id_pack!r}")
+        try:
+            if hasattr(self._local_objects[id_pack], '____conn__'):
+                # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
+                # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
+                # see issue #346 or tests.test_rpyc_over_rpyc.Test_rpyc_over_rpyc
+                conn = self._local_objects[id_pack].____conn__
+                return conn.sync_request(consts.HANDLE_TYPE, id_pack)
+            else:
+                return type(self._local_objects[id_pack])
+        except BaseException as e:
+            print(f"exception in handle_type {e!r}, {id_pack!r}")
 
     def _handle_instancecheck(self, obj, other_id_pack):
         if hasattr(obj, '____conn__'):  # keep unwrapping!

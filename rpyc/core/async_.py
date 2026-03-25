@@ -1,4 +1,3 @@
-import sys
 import time  # noqa: F401
 import itertools
 from rpyc.lib import Timeout

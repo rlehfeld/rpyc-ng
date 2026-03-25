@@ -3,8 +3,7 @@ of *magic*, so beware.
 """
 import sys
 import types
-import inspect
-from rpyc.lib import get_methods, get_id_pack, ObjectType
+from rpyc.lib import get_methods, get_id_pack
 from rpyc.lib.compat import pickle, maxint
 from rpyc.core import consts
 
@@ -92,6 +91,7 @@ def asyncreq(proxy, handler, *args):
 
 class Member:
     __slots__ = "____conn__", "____id_pack__", "____refcount__"
+
 
 class MemberDescriptor:
     __slots__ = '_name', '_owner', '_default'
@@ -423,6 +423,7 @@ def _make_method(name, doc):
         return __array__
     return Method(name, doc)
 
+
 class NetrefClass:
     """a descriptor of the class being proxied
 
@@ -450,7 +451,6 @@ class NetrefClass:
         if netref_instance is None:
             return self.owner
         return self.instance
-        #return self.owner if netref_instance.____id_pack__[2] == 0 else self.instance
 
 
 def class_factory(id_pack, methods, conn=None):
