@@ -761,7 +761,10 @@ class Connection(object):
         res = AsyncResult(self)
         if timeout is not None:
             res.set_expiry(timeout)
-        self._async_request(handler, args, res)
+        try:
+            self._async_request(handler, args, res)
+        except BaseException as e:
+            print(f'sending request problem {e!r}', file=sys.__stderr__)
         return res
 
     @property

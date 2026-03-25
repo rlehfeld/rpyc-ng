@@ -21,6 +21,7 @@ class AsyncResult:
         self._obj = None
         self._callbacks = []
         self._ttl = Timeout(None)
+        print(f"created {self!r}", file=sys.__stderr__)
 
     def __repr__(self):
         if self._is_ready:
