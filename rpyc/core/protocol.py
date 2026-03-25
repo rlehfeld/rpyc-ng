@@ -361,9 +361,9 @@ class Connection(object):
         if cls_id_pack in self._netref_classes_cache:
             cls = self._netref_classes_cache[cls_id_pack]
         elif id_pack[1:] != cls_id_pack:
-            print(f"requesting HANDLE_TYPE {id_pack!r}", file=sys.__stderr__)
+            print(f"requesting HANDLE_TYPE {self!r}, {id_pack!r}", file=sys.__stderr__)
             cls = self.sync_request(consts.HANDLE_TYPE, id_pack)
-            print(f"result HANDLE_TYPE {cls.____id_pack__[1:]!r} == {cls_id_pack!r}?, ({cls.____id_pack__[1:] == cls_id_pack})", file=sys.__stderr__)
+            print(f"result HANDLE_TYPE {self!r}, {cls.____id_pack__[1:]!r} == {cls_id_pack!r}?, ({cls.____id_pack__[1:] == cls_id_pack})", file=sys.__stderr__)
             assert cls.____id_pack__[1:] == cls_id_pack, (
                 f"{cls.____id_pack__=!r} != {cls_id_pack=!r}, {id_pack=!r}"
             )
@@ -471,7 +471,7 @@ class Connection(object):
                 success = self._recv_event.wait_for(predicate, timeout.timeleft())
                 print(f"waited on self._recv_event {success!r}", file=sys.stderr)
                 if not success or not waiting():
-                    print(f"waited on self._recv_event {success!r}", file=sys.stderr)
+                    print(f"waited on self._recv_event {success!r}, {waiting()!r}", file=sys.stderr)
                     return False
             self._receiving = True
 
@@ -908,7 +908,7 @@ class Connection(object):
         return self._handle_getattr(obj, "__exit__")(exc, typ, tb)
 
     def _handle_type(self, id_pack):  # request handler
-        print(f"in handle_type {id_pack!r}")
+        print(f"in handle_type {self!r}, {id_pack!r}", file=sys.__stderr__)
         try:
             if hasattr(self._local_objects[id_pack], '____conn__'):
                 # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
