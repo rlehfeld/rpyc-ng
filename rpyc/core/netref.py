@@ -309,7 +309,7 @@ class NetrefMetaclass(type):
         raise TypeError("isinstance() arg 2 must be a class, type, or tuple of classes and types")
 
     def __hash__(self):
-        if self.____conn__ is None:
+        if self.____conn__ is None or type(proxy) is NetrefMetaclass:
             return super(type(self), self).__hash__()
         return syncreq(self, consts.HANDLE_HASH)
 
