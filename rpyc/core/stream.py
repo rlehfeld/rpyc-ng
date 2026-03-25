@@ -75,13 +75,16 @@ class Stream:
 
         timeout = Timeout(timeout)
         try:
+            if predicate is not None and predicate():
+                return False
+
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
             sfd = self.fileno()
             wfd = self._socket_r.fileno()
             p.register(sfd, "r")
             p.register(wfd, "r")
             while True:
-                print("entering poll", file=sys.__stderr__)
+                print(f"entering poll {predicate!r}", file=sys.__stderr__)
                 try:
                     rl = p.poll(timeout.timeleft())
                 except select_error:
