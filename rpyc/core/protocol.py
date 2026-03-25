@@ -361,9 +361,7 @@ class Connection(object):
         if cls_id_pack in self._netref_classes_cache:
             cls = self._netref_classes_cache[cls_id_pack]
         elif id_pack[1:] != cls_id_pack:
-            print(f"requesting HANDLE_TYPE {self!r}, {id_pack!r}", file=sys.__stderr__)
             cls = self.sync_request(consts.HANDLE_TYPE, id_pack)
-            print(f"result HANDLE_TYPE {self!r}, {cls.____id_pack__[1:]!r} == {cls_id_pack!r}?, ({cls.____id_pack__[1:] == cls_id_pack})", file=sys.__stderr__)
             assert cls.____id_pack__[1:] == cls_id_pack, (
                 f"{cls.____id_pack__=!r} != {cls_id_pack=!r}, {id_pack=!r}"
             )
@@ -381,7 +379,6 @@ class Connection(object):
         try:
             handler, args = raw_args
             args = self._unbox(args)
-            print(f"_dispatch_request {self!r} {handler=!r}", file=sys.__stderr__)
             res = self._HANDLERS[handler](self, *args)
         except BaseException:
             # need to catch old style exceptions too
@@ -421,7 +418,6 @@ class Connection(object):
     def _dispatch(self, data):  # serving---dispatch?
         msg, = brine.I1.unpack(data[:1])  # unpack just msg to minimize time to release
         if msg == consts.MSG_REQUEST:
-            print(f"MSG_REQ {self!r}", file=sys.__stderr__)
             if self._bind_threads:
                 with self._lock:
                     self._get_thread().incr()
@@ -433,13 +429,11 @@ class Connection(object):
                     self._get_thread().decr()
 
             if msg == consts.MSG_REPLY:
-                print(f"MSG_REPLY {self!r}", file=sys.__stderr__)
                 seq, args = brine.load(data[1:])
                 obj = self._unbox(args)
                 self._seq_request_callback(msg, seq, False, obj)
                 self.notify()
             elif msg == consts.MSG_EXCEPTION:
-                print(f"MSG_EXCEPTION {self!r}", file=sys.__stderr__)
                 seq, args = brine.load(data[1:])
                 obj = self._unbox_exc(args)
                 self._seq_request_callback(msg, seq, True, obj)
@@ -873,9 +867,6 @@ class Connection(object):
             raise
 
     def _handle_hash(self, obj):  # request handler
-        print(f"handle_hash of {type(obj)=}, {obj=!r}", file=sys.__stderr__)
-        h = hash(obj)
-        print(f"handle_hash of {obj=!r} {h=!r}", file=sys.__stderr__)
         return hash(obj)
 
     def _handle_call(self, obj, args, kwargs=()):  # request handler
@@ -914,18 +905,14 @@ class Connection(object):
         return self._handle_getattr(obj, "__exit__")(exc, typ, tb)
 
     def _handle_type(self, id_pack):  # request handler
-        print(f"in handle_type {self!r}, {id_pack!r}", file=sys.__stderr__)
-        try:
-            if hasattr(self._local_objects[id_pack], '____conn__'):
-                # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
-                # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
-                # see issue #346 or tests.test_rpyc_over_rpyc.Test_rpyc_over_rpyc
-                conn = self._local_objects[id_pack].____conn__
-                return conn.sync_request(consts.HANDLE_TYPE, id_pack)
-            else:
-                return type(self._local_objects[id_pack])
-        except BaseException as e:
-            print(f"exception in handle_type {e!r}, {id_pack!r}", file=sys.__stderr__)
+        if hasattr(self._local_objects[id_pack], '____conn__'):
+            # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
+            # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
+            # see issue #346 or tests.test_rpyc_over_rpyc.Test_rpyc_over_rpyc
+            conn = self._local_objects[id_pack].____conn__
+            return conn.sync_request(consts.HANDLE_TYPE, id_pack)
+        else:
+            return type(self._local_objects[id_pack])
 
     def _handle_instancecheck(self, obj, other_id_pack):
         if hasattr(obj, '____conn__'):  # keep unwrapping!
