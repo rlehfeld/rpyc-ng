@@ -1,5 +1,6 @@
 import sys
 import time  # noqa: F401
+import itertools
 from rpyc.lib import Timeout
 from rpyc.lib.compat import TimeoutError as AsyncResultTimeout
 
@@ -9,9 +10,11 @@ class AsyncResult:
     will eventually have a result. Use the :attr:`value` property to access the
     result (which will block if the result has not yet arrived).
     """
-    __slots__ = ["_conn", "_is_ready", "_is_exc", "_callbacks", "_obj", "_ttl"]
+    __slots__ = ["_conn", "_is_ready", "_is_exc", "_callbacks", "_obj", "_ttl", '_id']
+    _seqcounter = itertools.count()
 
     def __init__(self, conn):
+        self._id = next(self._seqcounter)
         self._conn = conn
         self._is_ready = False
         self._is_exc = None
@@ -28,7 +31,7 @@ class AsyncResult:
             state = "expired"
         else:
             state = "pending"
-        return f"<AsyncResult object ({state}) at 0x{id(self):08x}>"
+        return f"<AsyncResult object ({state}) at 0x{self._id:08x}>"
 
     def __call__(self, is_exc, obj):
         try:
