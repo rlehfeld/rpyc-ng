@@ -1,3 +1,4 @@
+import sys
 import time  # noqa: F401
 from rpyc.lib import Timeout
 from rpyc.lib.compat import TimeoutError as AsyncResultTimeout
@@ -31,6 +32,7 @@ class AsyncResult:
 
     def __call__(self, is_exc, obj):
         if self.expired:
+            print("got call for ready but expired", file=sys.__stderr__)
             return
         self._is_exc = is_exc
         self._obj = obj
@@ -47,6 +49,7 @@ class AsyncResult:
             # Serve the connection since we are not ready. Suppose
             # the reply for our seq is served. The callback is this class
             # so __call__ sets our obj and _is_ready to true.
+            print("waiting reply", file=sys.__stderr__)
             self._conn.serve(self._ttl, waiting=self._waiting)
 
         # Check if we timed out before result was ready

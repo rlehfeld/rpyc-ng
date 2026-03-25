@@ -84,7 +84,7 @@ class Stream:
             p.register(sfd, "r")
             p.register(wfd, "r")
             while True:
-                print(f"entering poll {predicate!r}", file=sys.__stderr__)
+                print(f"entering poll {predicate!r}, {timeout.timeleft()}", file=sys.__stderr__)
                 try:
                     rl = p.poll(timeout.timeleft())
                 except select_error:
