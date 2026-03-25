@@ -26,23 +26,27 @@ retry_errnos = (errno.EAGAIN, errno.EWOULDBLOCK)
 class Stream:
     """Base Stream"""
 
-    __slots__ = ('_pipe_r', '_pipe_w', '_predicate', '_lock')
+    __slots__ = ('_socket_r', '_socket_w', '_predicate', '_lock')
 
     def __init__(self):
         self._lock = threading.Lock()
         self._predicate = None
 
-        _pipe_r, _pipe_w = os.pipe()
+        self._socket_r, self._socket_w = socket.socketpair()
+        if hasattr(socket, 'SHUT_WR'):
+            self._socket_r.shutdown(socket.SHUT_WR)
+        if hasattr(socket, 'SHUT_RD'):
+            self._socket_w.shutdown(socket.SHUT_RD)
+
         if fcntl is not None:
-            flags = fcntl.fcntl(_pipe_r, fcntl.F_GETFL)
-            fcntl.fcntl(_pipe_r, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-        self._pipe_r = open(_pipe_r, mode='rb', buffering=0)
-        self._pipe_w = open(_pipe_w, mode='wb', buffering=0)
+            fd = self._socket_r.fileno()
+            flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+            fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     def close(self):
         """closes the stream, releasing any system resources associated with it"""
-        self._pipe_w.close()
-        self._pipe_r.close()
+        self._socket_w.close()
+        self._socket_r.close()
 
     @property
     def closed(self):
@@ -57,7 +61,7 @@ class Stream:
         with self._lock:
             if self._predicate is not None and self._predicate():
                 try:
-                    self._pipe_w.write(b'N')
+                    self._socket_w.send(b'N')
                 except AttributeError:
                     pass
 
@@ -71,9 +75,9 @@ class Stream:
         try:
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
             sfd = self.fileno()
-            pfd = self._pipe_r.fileno()
+            wfd = self._socket_r.fileno()
             p.register(sfd, "r")
-            p.register(pfd, "r")
+            p.register(wfd, "r")
             while True:
                 try:
                     rl = p.poll(timeout.timeleft())
@@ -83,8 +87,8 @@ class Stream:
                         continue
                     else:
                         raise
-                if pfd in (fd for fd, _ in rl):
-                    self._pipe_r.read(1)
+                if wfd in (fd for fd, _ in rl):
+                    self._socket_r.recv(1)
                     if predicate and predicate():
                         return False
                     continue
