@@ -363,7 +363,7 @@ class Connection(object):
         elif id_pack[1:] != cls_id_pack:
             print(f"requesting HANDLE_TYPE {id_pack!r}", file=sys.__stderr__)
             cls = self.sync_request(consts.HANDLE_TYPE, id_pack)
-            print(f"result HANDLE_TYPE {cls.____id_pack__[1:]!r} == {cls_id_pack!r}?", file=sys.__stderr__)
+            print(f"result HANDLE_TYPE {cls.____id_pack__[1:]!r} == {cls_id_pack!r}?, ({cls.____id_pack__[1:] == cls_id_pack})", file=sys.__stderr__)
             assert cls.____id_pack__[1:] == cls_id_pack, (
                 f"{cls.____id_pack__=!r} != {cls_id_pack=!r}, {id_pack=!r}"
             )
@@ -467,10 +467,11 @@ class Connection(object):
             if self._receiving:
                 if not wait_for_lock:
                     return False
-                print("waiting on self._recv_event", file=sys.stderr)
+                print(f"waiting on self._recv_event {timeout.timeleft()!r}, {wait_for_lock!r}", file=sys.stderr)
                 success = self._recv_event.wait_for(predicate, timeout.timeleft())
-                print("waited on self._recv_event", file=sys.stderr)
+                print(f"waited on self._recv_event {success!r}", file=sys.stderr)
                 if not success or not waiting():
+                    print(f"waited on self._recv_event {success!r}", file=sys.stderr)
                     return False
             self._receiving = True
 

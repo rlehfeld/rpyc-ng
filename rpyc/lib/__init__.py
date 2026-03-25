@@ -132,7 +132,7 @@ def worker_waitready(init, main):
     return thread, stack.pop()
 
 
-class Timeout(object):
+class Timeout:
 
     def __init__(self, timeout):
         if isinstance(timeout, Timeout):
