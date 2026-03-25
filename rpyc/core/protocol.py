@@ -467,17 +467,15 @@ class Connection(object):
             if self._receiving:
                 if not wait_for_lock:
                     return False
-                print(f"waiting on self._recv_event {self!r}", file=sys.stderr)
                 success = self._recv_event.wait_for(predicate, timeout.timeleft())
-                print(f"waited on self._recv_event {self!r}", file=sys.stderr)
                 if not success or not waiting():
                     return False
             self._receiving = True
 
         try:
-            print(f"entering poll {self!r}", file=sys.stderr)
+            print(f"entering poll {self!r} {timeout.timeleft()=!r}", file=sys.stderr)
             data = self._channel.poll(timeout, lambda: not waiting()) and self._channel.recv()
-            print(f"leaving poll {self!r}", file=sys.stderr)
+            print(f"leaving poll {self!r} {timeout.timeleft()=!r}, {bool(data)=!r}, {waiting()=!r}", file=sys.stderr)
 
         except Exception as exc:
             if isinstance(exc, EOFError):
