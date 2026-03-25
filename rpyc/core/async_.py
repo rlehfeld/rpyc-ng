@@ -54,7 +54,7 @@ class AsyncResult:
             raise AsyncResultTimeout("result expired")
 
     def _waiting(self):
-        return not (self._is_ready or self.expired)
+        return not (self._is_ready or self._ttl.expired())
 
     def add_callback(self, func):
         """Adds a callback to be invoked when the result arrives. The callback

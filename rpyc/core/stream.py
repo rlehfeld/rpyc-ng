@@ -58,8 +58,10 @@ class Stream:
         raise NotImplementedError()
 
     def notify(self):
+        print("in notify", file=sys.__stderr__)
         with self._lock:
             if self._predicate is not None and self._predicate():
+                print("notified", file=sys.__stderr__)
                 try:
                     self._socket_w.send(b'N')
                 except AttributeError:
@@ -79,6 +81,7 @@ class Stream:
             p.register(sfd, "r")
             p.register(wfd, "r")
             while True:
+                print("entering poll", file=sys.__stderr__)
                 try:
                     rl = p.poll(timeout.timeleft())
                 except select_error:
@@ -87,13 +90,15 @@ class Stream:
                         continue
                     else:
                         raise
-                if wfd in (fd for fd, _ in rl):
+                if any(wfd == fd for fd, _ in rl):
                     self._socket_r.recv(1)
-                    if predicate and predicate():
+                    if predicate is not None and predicate():
+                        print("notificated", file=sys.__stderr__)
                         return False
+                    print("notificated but not for us", file=sys.__stderr__)
                     continue
 
-                return bool(rl)
+                return any(sfd == fd for fd, _ in rl)
 
         except ValueError:
             # if the underlying call is a select(), then the following errors may happen:
@@ -456,11 +461,11 @@ class PipeStream(Stream):
 
     def poll(self, timeout, predicate=None):
         def ready():
-            return (self._ready or self.incoming is ClosedFile or predicate is None or predicate())
+            return (self._ready or self.incoming is ClosedFile or (predicate is not None and predicate()))
 
         with self._condition:
             self._condition.wait_for(ready, timeout.timeleft())
-            if predicate and predicate():
+            if predicate is not None and predicate():
                 return False
             if self._ready:
                 return True
@@ -626,7 +631,7 @@ class Win32PipeStream(Stream):
         timeout = Timeout(timeout)
         try:
             while True:
-                if predicate and predicate():
+                if predicate is not None and predicate():
                     return False
                 if win32pipe.PeekNamedPipe(self.incoming, 0)[1] != 0:
                     return True
@@ -796,7 +801,7 @@ class NamedPipeStream(Win32PipeStream):
                     return True
 
             while True:
-                if predicate and predicate():
+                if predicate is not None and predicate():
                     return False
                 res = win32event.WaitForSingleObject(self.read_overlapped.hEvent, wait_time)
                 if res == win32event.WAIT_OBJECT_0:
