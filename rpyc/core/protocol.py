@@ -420,6 +420,7 @@ class Connection(object):
     def _dispatch(self, data):  # serving---dispatch?
         msg, = brine.I1.unpack(data[:1])  # unpack just msg to minimize time to release
         if msg == consts.MSG_REQUEST:
+            print(f"MSG_REQ {self!r}", file=sys.__stderr__)
             if self._bind_threads:
                 with self._lock:
                     self._get_thread().incr()
@@ -431,11 +432,13 @@ class Connection(object):
                     self._get_thread().decr()
 
             if msg == consts.MSG_REPLY:
+                print(f"MSG_REPLY {self!r}", file=sys.__stderr__)
                 seq, args = brine.load(data[1:])
                 obj = self._unbox(args)
                 self._seq_request_callback(msg, seq, False, obj)
                 self.notify()
             elif msg == consts.MSG_EXCEPTION:
+                print(f"MSG_EXCEPTION {self!r}", file=sys.__stderr__)
                 seq, args = brine.load(data[1:])
                 obj = self._unbox_exc(args)
                 self._seq_request_callback(msg, seq, True, obj)
@@ -473,9 +476,9 @@ class Connection(object):
             self._receiving = True
 
         try:
-            print(f"entering poll {self!r} {timeout.timeleft()=!r}", file=sys.stderr)
+            print(f"entering poll {self!r}", file=sys.stderr)
             data = self._channel.poll(timeout, lambda: not waiting()) and self._channel.recv()
-            print(f"leaving poll {self!r} {timeout.timeleft()=!r}, {bool(data)=!r}, {waiting()=!r}", file=sys.stderr)
+            print(f"leaving poll {self!r}, {bool(data)=!r}", file=sys.stderr)
 
         except Exception as exc:
             if isinstance(exc, EOFError):
