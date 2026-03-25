@@ -361,8 +361,9 @@ class Connection(object):
         if cls_id_pack in self._netref_classes_cache:
             cls = self._netref_classes_cache[cls_id_pack]
         elif id_pack[1:] != cls_id_pack:
-            print(id_pack, file=sys.__stderr__)
+            print(f"requesting HANDLE_TYPE {id_pack!r}", file=sys.__stderr__)
             cls = self.sync_request(consts.HANDLE_TYPE, id_pack)
+            print(f"result HANDLE_TYPE {cls.____id_pack__[1:]!r} == {cls_id_pack!r}?", file=sys.__stderr__)
             assert cls.____id_pack__[1:] == cls_id_pack, (
                 f"{cls.____id_pack__=!r} != {cls_id_pack=!r}, {id_pack=!r}"
             )
@@ -909,7 +910,7 @@ class Connection(object):
             else:
                 return type(self._local_objects[id_pack])
         except BaseException as e:
-            print(f"exception in handle_type {e!r}, {id_pack!r}")
+            print(f"exception in handle_type {e!r}, {id_pack!r}", file=sys.__stderr__)
 
     def _handle_instancecheck(self, obj, other_id_pack):
         if hasattr(obj, '____conn__'):  # keep unwrapping!
