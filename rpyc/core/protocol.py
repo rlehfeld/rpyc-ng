@@ -429,18 +429,24 @@ class Connection(object):
             if self._bind_threads:
                 with self._lock:
                     self._get_thread().decr()
+
             if msg == consts.MSG_REPLY:
                 seq, args = brine.load(data[1:])
                 obj = self._unbox(args)
                 self._seq_request_callback(msg, seq, False, obj)
-                self._channel.notify()
+                self.notify()
             elif msg == consts.MSG_EXCEPTION:
                 seq, args = brine.load(data[1:])
                 obj = self._unbox_exc(args)
                 self._seq_request_callback(msg, seq, True, obj)
-                self._channel.notify()
+                self.notify()
             else:
                 raise ValueError(f"invalid message type: {msg!r}")
+
+    def notify(self):
+        self._channel.notify()
+        with self._recv_event:
+            self._recv_event.notify_all()
 
     def serve(self, timeout=1, wait_for_lock=True, waiting=lambda: True):  # serving
         """Serves a single request or reply that arrives within the given
@@ -461,7 +467,9 @@ class Connection(object):
             if self._receiving:
                 if not wait_for_lock:
                     return False
+                print("waiting on self._recv_event", file=sys.stderr)
                 success = self._recv_event.wait_for(predicate, timeout.timeleft())
+                print("waited on self._recv_event", file=sys.stderr)
                 if not success or not waiting():
                     return False
             self._receiving = True
