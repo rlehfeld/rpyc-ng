@@ -11,7 +11,7 @@ import os
 import threading
 
 from weakref import ref
-from threading import Lock, Condition, RLock
+from threading import Lock, Condition
 from rpyc.lib import worker, spawn, Timeout, get_methods, get_id_pack, hasattr_static, ObjectType
 from rpyc.lib.compat import pickle, next, maxint, select_error, acquire_lock  # noqa: F401
 from rpyc.lib.colls import WeakValueDict, RefCountingColl
@@ -160,9 +160,10 @@ class Connection(object):
         self._HANDLERS = self._request_handlers()
         self._channel = channel
         self._seqcounter = itertools.count()
-        self._recvlock = RLock()  # AsyncResult implementation means that synchronous requests have multiple acquires
         self._sendlock = Lock()
-        self._recv_event = Condition()  # TODO: why not simply timeout? why not associate w/ recvlock? explain/redesign
+        self._sending = False
+        self._recv_event = Condition()
+        self._receiving = False
         self._request_callbacks = {}
         self._local_objects = RefCountingColl()
         self._last_traceback = None
@@ -210,7 +211,8 @@ class Connection(object):
         self._closed = True
         self._channel.close()
         self._local_root.on_disconnect(self)
-        self._request_callbacks.clear()
+        with self._recv_event:
+            self._request_callbacks.clear()
         self._local_objects.clear()
         self._proxy_cache.clear()
         self._netref_classes_cache.clear()
@@ -220,15 +222,6 @@ class Connection(object):
         # self._seqcounter = None
         # self._config.clear()
         del self._HANDLERS
-        if _anyway:
-            try:
-                self._recvlock.release()
-            except Exception:
-                pass
-            try:
-                self._sendlock.release()
-            except Exception:
-                pass
         self._cleanup_threads()
 
     def _cleanup_threads(self):
@@ -309,34 +302,22 @@ class Connection(object):
                     this_thread.incr()
                 else:
                     this_thread.decr()
-        # GC might run while sending data
-        # if so, a BaseNetref.__del__ might be called
-        # BaseNetref.__del__ must call asyncreq,
-        # which will cause a deadlock
-        # Solution:
-        # Add the current request to a queue and let the thread that currently
-        # holds the sendlock send it when it's done with its current job.
-        # NOTE: Atomic list operations should be thread safe,
-        # please call me out if they are not on all implementations!
-        self._send_queue.append(data)
-        # It is crucial to check the queue each time AFTER releasing the lock:
-        while self._send_queue:
-            if not self._sendlock.acquire(False):
-                # Another thread holds the lock. It will send the data after
-                # it's done with its current job. We can safely return.
+
+        with self._sendlock:
+            self._send_queue.append(data)
+            if self._sending:
                 return
+
             try:
-                # Can happen if another consumer was scheduled in between
-                # `while` and `acquire`:
-                if not self._send_queue:
-                    # Must `continue` to ensure that `send_queue` is checked
-                    # after releasing the lock! (in case another producer is
-                    # scheduled before `release`)
-                    continue
-                data = self._send_queue.pop(0)
-                self._channel.send(data)
+                self._sending = True
+
+                while self._send_queue:
+                    data = self._send_queue.pop(0)
+                    with _UnlockGuard(self._sendlock):
+                        self._channel.send(data)
+
             finally:
-                self._sendlock.release()
+                self._sending = False
 
     def _box(self, obj):  # boxing
         """store a local object in such a way that it could be recreated on
@@ -426,7 +407,8 @@ class Connection(object):
                             instantiate_oldstyle_exceptions=self._config["instantiate_oldstyle_exceptions"])
 
     def _seq_request_callback(self, msg, seq, is_exc, obj):
-        _callback = self._request_callbacks.pop(seq, None)
+        with self._recv_event:
+            _callback = self._request_callbacks.pop(seq, None)
         if _callback is not None:
             _callback(is_exc, obj)
         elif self._config["logger"] is not None:
@@ -439,8 +421,6 @@ class Connection(object):
             if self._bind_threads:
                 with self._lock:
                     self._get_thread().incr()
-            else:
-                self._recvlock.release()
             seq, args = brine.load(data[1:])
             self._dispatch_request(seq, args)
         else:
@@ -451,14 +431,12 @@ class Connection(object):
                 seq, args = brine.load(data[1:])
                 obj = self._unbox(args)
                 self._seq_request_callback(msg, seq, False, obj)
-                if not self._bind_threads:
-                    self._recvlock.release()  # releasing here fixes race condition with AsyncResult.wait
+                self._channel.notify()
             elif msg == consts.MSG_EXCEPTION:
-                if not self._bind_threads:
-                    self._recvlock.release()
                 seq, args = brine.load(data[1:])
                 obj = self._unbox_exc(args)
                 self._seq_request_callback(msg, seq, True, obj)
+                self._channel.notify()
             else:
                 raise ValueError(f"invalid message type: {msg!r}")
 
@@ -473,41 +451,35 @@ class Connection(object):
         timeout = Timeout(timeout)
         if self._bind_threads:
             return self._serve_bound(timeout, wait_for_lock)
+
+        def predicate():
+            return not (self._receiving and waiting())
+
         with self._recv_event:
-            # Exit early if we cannot acquire the recvlock
-            if not self._recvlock.acquire(False):
-                if wait_for_lock:
-                    if not waiting():  # unlikely, but the result could've arrived and another thread could've won the race to acquire
-                        return False
-                    # Wait condition for recvlock release; recvlock is not underlying lock for condition
-                    return self._recv_event.wait(timeout.timeleft())
-                else:
+            if self._receiving:
+                if not wait_for_lock:
                     return False
-        if not waiting():  # the result arrived and we won the race to acquire, unlucky
-            self._recvlock.release()
-            with self._recv_event:
-                self._recv_event.notify_all()
-            return False
-        # Assume the receive rlock is acquired and incremented
-        # We must release once BEFORE dispatch, dispatch any data, and THEN notify all (see issue #527 and #449)
+                success = self._recv_event.wait_for(predicate, timeout.timeleft())
+                if not success or not waiting():
+                    return False
+            self._receiving = True
+
         try:
-            data = None  # Ensure data is initialized
-            data = self._channel.poll(timeout) and self._channel.recv()
+            data = self._channel.poll(timeout, lambda: not waiting()) and self._channel.recv()
+
         except Exception as exc:
-            self._recvlock.release()
             if isinstance(exc, EOFError):
                 self.close()  # sends close async request
             raise
-        else:
-            if data:
-                self._dispatch(data)  # Dispatch will unbox, invoke callbacks, etc.
-                return True
-            else:
-                self._recvlock.release()
-                return False
         finally:
             with self._recv_event:
+                self._receiving = False
                 self._recv_event.notify_all()
+
+        if data:
+            self._dispatch(data)  # Dispatch will unbox, invoke callbacks, etc.
+            return True
+        return False
 
     def _serve_bound(self, timeout, wait_for_lock):
         """Serves messages like `serve` with the added benefit of making request/reply thread bound.
@@ -765,14 +737,16 @@ class Connection(object):
 
     def _async_request(self, handler, args=(), callback=(lambda a, b: None)):  # serving
         seq = self._get_seq_id()
-        self._request_callbacks[seq] = callback
+        with self._recv_event:
+            self._request_callbacks[seq] = callback
         try:
             self._send(consts.MSG_REQUEST, seq, (handler, self._box(args)))
         except Exception:
             # TODO: review test_remote_exception, logging exceptions show attempt to write on closed stream
             # depending on the case, the MSG_REQUEST may or may not have been sent completely
             # so, pop the callback and raise to keep response integrity is consistent
-            self._request_callbacks.pop(seq, None)
+            with self._recv_event:
+                self._request_callbacks.pop(seq, None)
             raise
 
     def async_request(self, handler, *args, **kwargs):  # serving

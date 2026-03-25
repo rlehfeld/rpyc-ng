@@ -40,8 +40,8 @@ class TestRace(unittest.TestCase):
                 a_result.wait()
             except KeyboardInterrupt:
                 raise Exception("deadlock")
-
-            timer.cancel()
+            finally:
+                timer.cancel()
 
 
 class _AsyncResult(rc_async_.AsyncResult):

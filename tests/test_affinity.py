@@ -74,4 +74,3 @@ class Test_Affinity(unittest.TestCase):
         max_elapsed_time = self.cfg['sync_request_timeout']
         elapsed_time = self._time_execute_sleep()
         self.assertLess(elapsed_time, max_elapsed_time)
-        self.assertIn('count=0', repr(self.conn._recvlock))

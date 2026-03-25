@@ -42,9 +42,13 @@ class Channel(object):
         """returns the file descriptor of the underlying stream"""
         return self.stream.fileno()
 
-    def poll(self, timeout):
+    def poll(self, timeout, predicate=None):
         """polls the underlying steam for data, waiting up to *timeout* seconds"""
-        return self.stream.poll(timeout)
+        return self.stream.poll(timeout, predicate)
+
+    def notify(self):
+        """polls the underlying steam for data, waiting up to *timeout* seconds"""
+        self.stream.notify()
 
     def recv(self):
         """Receives the next packet (or *frame*) from the underlying stream.

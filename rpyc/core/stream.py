@@ -23,14 +23,26 @@ ssl = safe_import("ssl")
 retry_errnos = (errno.EAGAIN, errno.EWOULDBLOCK)
 
 
-class Stream(object):
+class Stream:
     """Base Stream"""
 
-    __slots__ = ()
+    __slots__ = ('_pipe_r', '_pipe_w', '_predicate', '_lock')
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._predicate = None
+
+        _pipe_r, _pipe_w = os.pipe()
+        if fcntl is not None:
+            flags = fcntl.fcntl(_pipe_r, fcntl.F_GETFL)
+            fcntl.fcntl(_pipe_r, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+        self._pipe_r = open(_pipe_r, mode='rb', buffering=0)
+        self._pipe_w = open(_pipe_w, mode='wb', buffering=0)
 
     def close(self):
         """closes the stream, releasing any system resources associated with it"""
-        raise NotImplementedError()
+        self._pipe_w.close()
+        self._pipe_r.close()
 
     @property
     def closed(self):
@@ -41,13 +53,27 @@ class Stream(object):
         """returns the stream's file descriptor"""
         raise NotImplementedError()
 
-    def poll(self, timeout):
+    def notify(self):
+        with self._lock:
+            if self._predicate is not None and self._predicate():
+                try:
+                    self._pipe_w.write(b'N')
+                except AttributeError:
+                    pass
+
+    def poll(self, timeout, predicate=None):
         """indicates whether the stream has data to read (within *timeout*
         seconds)"""
+        with self._lock:
+            self._predicate = predicate
+
         timeout = Timeout(timeout)
         try:
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
-            p.register(self.fileno(), "r")
+            sfd = self.fileno()
+            pfd = self._pipe_r.fileno()
+            p.register(sfd, "r")
+            p.register(pfd, "r")
             while True:
                 try:
                     rl = p.poll(timeout.timeleft())
@@ -57,8 +83,14 @@ class Stream(object):
                         continue
                     else:
                         raise
-                else:
-                    break
+                if pfd in (fd for fd, _ in rl):
+                    self._pipe_r.read(1)
+                    if predicate and predicate():
+                        return False
+                    continue
+
+                return bool(rl)
+
         except ValueError:
             # if the underlying call is a select(), then the following errors may happen:
             # - "ValueError: filedescriptor cannot be a negative integer (-1)"
@@ -66,7 +98,9 @@ class Stream(object):
             # let's translate them to select.error
             ex = sys.exc_info()[1]
             raise select_error(str(ex))
-        return bool(rl)
+        finally:
+            with self._lock:
+                self._predicate = None
 
     def read(self, count):
         """reads **exactly** *count* bytes, or raise EOFError
@@ -91,7 +125,7 @@ class Stream(object):
         self.close()
 
 
-class ClosedFile(object):
+class ClosedFile:
     """Represents a closed file object (singleton)"""
     __slots__ = ()
 
@@ -101,6 +135,9 @@ class ClosedFile(object):
         raise EOFError("stream has been closed")
 
     def close(self):
+        pass
+
+    def notify(self):
         pass
 
     @property
@@ -122,6 +159,11 @@ class SocketStream(Stream):
 
     def __init__(self, sock):
         self.sock = sock
+        super().__init__()
+
+        if fcntl is not None:
+            flags = fcntl.fcntl(self.fileno(), fcntl.F_GETFL)
+            fcntl.fcntl(self.fileno(), fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     @classmethod
     def _connect(cls, host, port, family=socket.AF_INET, socktype=socket.SOCK_STREAM,
@@ -260,6 +302,7 @@ class SocketStream(Stream):
             except Exception:
                 pass
         sock.close()
+        super().close()
 
     def fileno(self):
         try:
@@ -403,9 +446,18 @@ class PipeStream(Stream):
         with self._condition:
             return self.incoming.fileno()
 
-    def poll(self, timeout):
+    def notify(self):
         with self._condition:
-            self._condition.wait_for(lambda: self._ready or self.incoming is ClosedFile, timeout.timeleft())
+            self._condition.notify()
+
+    def poll(self, timeout, predicate=None):
+        def ready():
+            return (self._ready or self.incoming is ClosedFile or predicate is None or predicate())
+
+        with self._condition:
+            self._condition.wait_for(ready, timeout.timeleft())
+            if predicate and predicate():
+                return False
             if self._ready:
                 return True
             if self.incoming is ClosedFile:
@@ -562,11 +614,16 @@ class Win32PipeStream(Stream):
             self.close()
             raise EOFError(ex)
 
-    def poll(self, timeout, interval=0.001):
+    def notify(self):
+        pass
+
+    def poll(self, timeout, interval=0.001, predicate=None):
         """a Windows version of select()"""
         timeout = Timeout(timeout)
         try:
             while True:
+                if predicate and predicate():
+                    return False
                 if win32pipe.PeekNamedPipe(self.incoming, 0)[1] != 0:
                     return True
                 if timeout.expired():
@@ -720,14 +777,11 @@ class NamedPipeStream(Win32PipeStream):
             self.close()
             raise EOFError(ex)
 
-    def poll(self, timeout, interval=0.001):
+    def poll(self, timeout, interval=0.001, predicate=None):
         """Windows version of select()"""
         timeout = Timeout(timeout)
         try:
-            if timeout.finite:
-                wait_time = int(max(1, timeout.timeleft() * 1000))
-            else:
-                wait_time = win32event.INFINITE
+            wait_time = int(max(1, interval * 1000))
 
             if not self.poll_read:
                 hr, self.poll_buffer = win32file.ReadFile(self.incoming,
@@ -736,8 +790,16 @@ class NamedPipeStream(Win32PipeStream):
                 self.poll_read = True
                 if hr == 0:
                     return True
-            res = win32event.WaitForSingleObject(self.read_overlapped.hEvent, wait_time)
-            return res == win32event.WAIT_OBJECT_0
+
+            while True:
+                if predicate and predicate():
+                    return False
+                res = win32event.WaitForSingleObject(self.read_overlapped.hEvent, wait_time)
+                if res == win32event.WAIT_OBJECT_0:
+                    return True
+                if timeout.expired():
+                    return False
+
         except TypeError:
             ex = sys.exc_info()[1]
             if not self.closed:

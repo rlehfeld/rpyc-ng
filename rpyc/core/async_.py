@@ -3,7 +3,7 @@ from rpyc.lib import Timeout
 from rpyc.lib.compat import TimeoutError as AsyncResultTimeout
 
 
-class AsyncResult(object):
+class AsyncResult:
     """*AsyncResult* represents a computation that occurs in the background and
     will eventually have a result. Use the :attr:`value` property to access the
     result (which will block if the result has not yet arrived).
