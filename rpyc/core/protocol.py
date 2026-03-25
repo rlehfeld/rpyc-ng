@@ -381,6 +381,7 @@ class Connection(object):
         try:
             handler, args = raw_args
             args = self._unbox(args)
+            print(f"_dispatch_request {self!r} {handler=!r}", file=sys.__stderr__)
             res = self._HANDLERS[handler](self, *args)
         except BaseException:
             # need to catch old style exceptions too
