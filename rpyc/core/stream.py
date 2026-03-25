@@ -59,9 +59,7 @@ class Stream:
 
     def notify(self):
         with self._lock:
-            print(f"in notify {self._predicate!r}", file=sys.__stderr__)
             if self._predicate is not None and self._predicate():
-                print("notified", file=sys.__stderr__)
                 try:
                     self._socket_w.send(b'N')
                 except AttributeError:
@@ -84,7 +82,6 @@ class Stream:
             p.register(sfd, "r")
             p.register(wfd, "r")
             while True:
-                print(f"entering poll {predicate!r}, {timeout.timeleft()}", file=sys.__stderr__)
                 try:
                     rl = p.poll(timeout.timeleft())
                 except select_error:
@@ -96,9 +93,7 @@ class Stream:
                 if any(wfd == fd for fd, _ in rl):
                     self._socket_r.recv(1)
                     if predicate is not None and predicate():
-                        print("notificated", file=sys.__stderr__)
                         return False
-                    print("notificated but not for us", file=sys.__stderr__)
                     continue
 
                 return any(sfd == fd for fd, _ in rl)
@@ -172,10 +167,6 @@ class SocketStream(Stream):
     def __init__(self, sock):
         self.sock = sock
         super().__init__()
-
-        if fcntl is not None:
-            flags = fcntl.fcntl(self.fileno(), fcntl.F_GETFL)
-            fcntl.fcntl(self.fileno(), fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     @classmethod
     def _connect(cls, host, port, family=socket.AF_INET, socktype=socket.SOCK_STREAM,

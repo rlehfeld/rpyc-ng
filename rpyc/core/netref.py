@@ -187,14 +187,13 @@ class NetrefMetaclass(type):
 
     def __del__(self):
         if self.____id_pack__ is not None:
-            if type(self) is not NetrefMetaclass or self.____id_pack__[2] == 0:
-                try:
-                    asyncreq(self, consts.HANDLE_DEL, self.____refcount__)
-                except Exception:
-                    # raised in a destructor, most likely on program termination,
-                    # when the connection might have already been closed.
-                    # it's safe to ignore all exceptions here
-                    pass
+            try:
+                asyncreq(self, consts.HANDLE_DEL, self.____refcount__)
+            except Exception:
+                # raised in a destructor, most likely on program termination,
+                # when the connection might have already been closed.
+                # it's safe to ignore all exceptions here
+                pass
 
     def __getattribute__(self, name):
         if type(self) is NetrefMetaclass:
