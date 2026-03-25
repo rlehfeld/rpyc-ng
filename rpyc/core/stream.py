@@ -58,8 +58,8 @@ class Stream:
         raise NotImplementedError()
 
     def notify(self):
-        print("in notify", file=sys.__stderr__)
         with self._lock:
+            print(f"in notify {self._predicate!r}", file=sys.__stderr__)
             if self._predicate is not None and self._predicate():
                 print("notified", file=sys.__stderr__)
                 try:
