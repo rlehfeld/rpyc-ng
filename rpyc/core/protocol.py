@@ -873,7 +873,7 @@ class Connection(object):
             raise
 
     def _handle_hash(self, obj):  # request handler
-        print(f"handle_hash of {type(obj=}, {obj=!r}", file=sys.__stderr__)
+        print(f"handle_hash of {type(obj)=}, {obj=!r}", file=sys.__stderr__)
         h = hash(obj)
         print(f"handle_hash of {obj=!r} {h=!r}", file=sys.__stderr__)
         return hash(obj)
