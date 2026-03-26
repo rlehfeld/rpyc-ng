@@ -43,7 +43,8 @@ jobs:
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: Init ssh settings
+      - name: Init ssh settings on Linux
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           mkdir -pv ~/.ssh
           chmod 700 ~/.ssh
@@ -52,6 +53,15 @@ jobs:
           ssh-keygen -q -t ed25519 -f ~/.ssh/id_ed25519 -N ''
           cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys
           uname -a
+      - name: Init ssh settings on Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          mkdir -pv $env:USERPROFILE\.ssh
+          chmod 700 $env:USERPROFILE\.ssh
+          echo NoHostAuthenticationForLocalhost yes >> $env:USERPROFILE\.ssh\config
+          echo StrictHostKeyChecking no >> $env:USERPROFILE\.ssh\config
+          ssh-keygen -q -t ed25519 -f $env:USERPROFILE\.ssh\id_ed25519 -N ''
+          type $env:USERPROFILE\.ssh/id_ed25519.pub >> $env:USERPROFILE\.ssh/authorized_keys
       - name: Run unittest with default settings
         if: ${{ matrix.rpyc-bind-threads == 'false' }}
         run: |
