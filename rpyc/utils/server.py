@@ -394,6 +394,7 @@ class ThreadPoolServer(Server):
     def __init__(self, *args, **kwargs):
         '''Initializes a ThreadPoolServer. In particular, instantiate the thread pool.'''
         # get the number of threads in the pool
+        self.polling_thread = None
         self.nbthreads = kwargs.pop('nbThreads', 20)
         self.request_batch_size = kwargs.pop('requestBatchSize', 10)
         # init the parent
@@ -427,7 +428,9 @@ class ThreadPoolServer(Server):
         # close parent server
         super().close()
         # stop producer thread
-        self.polling_thread.join()
+        self.polling_thread, polling_thread = None, self.polling_thread
+        if polling_thread is not None:
+            polling_thread.join()
         # cleanup thread pool : first fill the pool with None fds so that all threads exit
         # the blocking get on the queue of active connections. Then join the threads
         for _ in range(len(self.workers)):
