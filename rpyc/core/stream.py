@@ -113,7 +113,12 @@ class Stream:
                     else:
                         raise
                 if wfd is not None and any(wfd == fd for fd, _ in rl):
-                    c = socket_r.recv(1)
+                    try:
+                        c = socket_r.recv(1)
+                    except OSError:
+                        print(f'exc {os.getpid()=}, {threading.get_ident()} {self.__listening=!r}, {self.__polling=!r}', file=sys.__stderr__)
+                        raise
+
                     if c == b'C':
                         # notification for socket closing
                         p.unregister(wfd)
