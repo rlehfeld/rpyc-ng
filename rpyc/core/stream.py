@@ -6,10 +6,6 @@ import sys
 import os
 import socket
 import errno
-try:
-    import fcntl
-except ImportError:
-    fcntl = None
 import threading
 from rpyc.lib import safe_import, Timeout, worker, socket_backoff_connect
 from rpyc.lib.compat import poll, select_error, BYTES_LITERAL, get_exc_errno, maxint  # noqa: F401
@@ -17,6 +13,8 @@ from rpyc.core.consts import STREAM_CHUNK
 win32file = safe_import("win32file")
 win32pipe = safe_import("win32pipe")
 win32event = safe_import("win32event")
+pywintypes = safe_import("pywintypes")
+fcntl = safe_import("fcntl")
 ssl = safe_import("ssl")
 
 
@@ -38,7 +36,7 @@ class Stream:
         if hasattr(socket, 'SHUT_RD'):
             self._socket_w.shutdown(socket.SHUT_RD)
 
-        if fcntl is not None:
+        if fcntl:
             fd = self._socket_r.fileno()
             flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
@@ -469,7 +467,7 @@ class PipeStream(Stream):
 
     def _readthread(self, incoming):
         fd = incoming.fileno()
-        if fcntl is not None:
+        if fcntl:
             flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
@@ -632,7 +630,7 @@ class Win32PipeStream(Stream):
                 if timeout.expired():
                     return False
                 timeout.sleep(interval)
-        except TypeError:
+        except (TypeError, pywintypes.error):
             ex = sys.exc_info()[1]
             if not self.closed:
                 raise
@@ -648,7 +646,6 @@ class NamedPipeStream(Win32PipeStream):
     CONNECT_TIMEOUT = 3
 
     def __init__(self, handle, is_server_side):
-        import pywintypes
         super().__init__(handle, handle)
         self.is_server_side = is_server_side
         self.read_overlapped = pywintypes.OVERLAPPED()
