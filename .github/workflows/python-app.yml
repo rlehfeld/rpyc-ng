@@ -36,7 +36,9 @@ jobs:
           python -m pip install --upgrade pip setuptools flake8
           pip install -r requirements.txt
           pip install -r tests/requirements.txt
-          echo "PYTHONPATH=${PYTHONPATH}:/home/runner/work/rpyc" >> $GITHUB_ENV
+      - name: Install RPyC
+        run: |
+          pip install -e .
       - name: Lint with flake8
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
