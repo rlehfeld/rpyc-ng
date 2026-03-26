@@ -1,4 +1,5 @@
 import os
+import socket
 import time
 import rpyc
 import tempfile
@@ -29,7 +30,7 @@ class Test_ThreadedServer(unittest.TestCase):
         self.assertEqual(conn.eval("1+x"), 6)
         conn.close()
 
-
+@unittest.skipIf(hasattr(socket, "AF_UNIX"), "Requires Unix Domain Sockets")
 class Test_ThreadedServerOverUnixSocket(unittest.TestCase):
 
     def setUp(self):

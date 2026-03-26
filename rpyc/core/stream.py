@@ -620,7 +620,7 @@ class Win32PipeStream(Stream):
     def notify(self):
         pass
 
-    def poll(self, timeout, interval=0.001, predicate=None):
+    def poll(self, timeout, predicate=None, interval=0.001):
         """a Windows version of select()"""
         timeout = Timeout(timeout)
         try:
@@ -780,7 +780,7 @@ class NamedPipeStream(Win32PipeStream):
             self.close()
             raise EOFError(ex)
 
-    def poll(self, timeout, interval=0.001, predicate=None):
+    def poll(self, timeout, predicate=None, interval=0.001):
         """Windows version of select()"""
         timeout = Timeout(timeout)
         try:
