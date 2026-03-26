@@ -166,7 +166,7 @@ def socket_backoff_connect(family, socktype, proto, addr, timeout, attempts):
             sock.settimeout(timeout)
             sock.connect(addr)
             connecting = False
-        except socket.timeout:
+        except (socket.timeout, ConnectionRefusedError):
             sock.close()
             if collision == attempts or attempts < 1:
                 raise
