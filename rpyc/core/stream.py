@@ -56,9 +56,11 @@ class Stream:
                 self.__socket_w = None
                 socket_r = self.__socket_r
                 self.__socket_r = None
+                print(f'1st {os.getpid()=}, {threading.get_ident()} {self.__listening=!r}, {self.__polling=!r}', file=sys.__stderr__)
                 if not predicate():
                     socket_w.send(b'C')
                     self.__lock.wait_for(predicate)
+                print(f'2nd {os.getpid()=}, {threading.get_ident()} {self.__listening=!r}, {self.__polling=!r}', file=sys.__stderr__)
                 socket_r.close()
                 socket_w.close()
 
