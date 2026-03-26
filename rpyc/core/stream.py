@@ -811,8 +811,8 @@ class NamedPipeStream(Win32PipeStream):
             if not self.poll_read:
                 try:
                     hr, self.poll_buffer = win32file.ReadFile(self.incoming,
-                                                          self.poll_buffer,
-                                                          self.read_overlapped)
+                                                              self.poll_buffer,
+                                                              self.read_overlapped)
                 except pywintypes.error as ex:
                     if ex.args[0] in (
                             109,  # error: The pipe has been ended.

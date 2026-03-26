@@ -22,7 +22,7 @@ def splice_to_stderr(stream):
 class ClassicMode(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        from . import test_magic
+        from . import test_magic  # noqa, F401 it used in the test
 
     def setUp(self):
         self.conn = rpyc.classic.connect_thread()

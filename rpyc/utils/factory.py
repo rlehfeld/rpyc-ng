@@ -347,13 +347,18 @@ def _server(server, remote_service, remote_config, args=None):
 
 
 class ServerSocketStream(SocketStream):
+    __slots__ = '__server', '__lock'
+
     def __init__(self, sock, server):
-        self._server = server
+        self.__server = server
+        self.__lock = threading.Lock()
         super().__init__(sock)
 
     def close(self):
         super().close()
-        server, self._server = self._server, None
+        with self.__lock:
+            server = self.__server
+            self.__server = None
         if server is not None:
             server.join()
 
