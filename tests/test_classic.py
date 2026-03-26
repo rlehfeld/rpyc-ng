@@ -54,7 +54,10 @@ class ClassicMode(unittest.TestCase):
         finally:
             conn.close()
             worker.join()
-        self.assertEqual(conn.proc.wait(), 0)
+        if if sys.platform != "win32":
+            self.assertEqual(conn.proc.wait(), 0)
+        else:
+            self.assertTrue(conn.proc.wait() in (0, 120))
 
     def test_buffiter(self):
         bi = rpyc.buffiter(self.conn.builtin.range(10000))

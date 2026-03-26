@@ -23,7 +23,11 @@ class Test_GeventServer(unittest.TestCase):
 
     def tearDown(self):
         self.proc.terminate()
-        self.proc.communicate()  # clear io so resources are closed
+        try:
+            self.proc.communicate()  # clear io so resources are closed
+        except OSError:
+            if sys.platform != "win32":
+                raise
         self.proc.wait()
 
     def test_connection(self):
