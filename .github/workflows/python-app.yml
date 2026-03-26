@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install gdb
-        if: ${{ matrix.python-version == '3.12' }}
+        if: ${{ matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest' }}
         run: |
           sudo apt-get -o DPkg::Lock::Timeout=-1 install -y gdb
       - name: Install dependencies
@@ -38,6 +38,7 @@ jobs:
           pip install -r tests/requirements.txt
           echo "PYTHONPATH=${PYTHONPATH}:/home/runner/work/rpyc" >> $GITHUB_ENV
       - name: Lint with flake8
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
