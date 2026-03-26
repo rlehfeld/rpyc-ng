@@ -69,7 +69,8 @@ class Server(object):
 
         self.protocol_config = protocol_config
         self.clients = set()
-
+        self.listener = None
+        self.logger = None
         if socket_path is not None:
             if hostname is not None or port != 0 or ipv6 is not False:
                 raise ValueError("socket_path is mutually exclusive with: hostname, port, ipv6")
@@ -122,13 +123,16 @@ class Server(object):
             try:
                 self.registrar.unregister(self.port)
             except Exception:
-                self.logger.exception("error unregistering services")
-        try:
-            self.listener.shutdown(socket.SHUT_RDWR)
-        except (EnvironmentError, socket.error):
-            pass
-        self.listener.close()
-        self.logger.info("listener closed")
+                if self.logger is not None:
+                    self.logger.exception("error unregistering services")
+        if self.listener is not None:
+            try:
+                self.listener.shutdown(socket.SHUT_RDWR)
+            except (EnvironmentError, socket.error):
+                pass
+            self.listener.close()
+        if self.logger is not None:
+            self.logger.info("listener closed")
         for c in set(self.clients):
             try:
                 # inform peer that we are finished sending

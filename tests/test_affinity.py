@@ -45,7 +45,8 @@ class Test_Affinity(unittest.TestCase):
         setattr(rpyc.core.protocol.Connection, '_dispatch', cls._orig_func)
 
     def setUp(self):
-        self._os.sched_setaffinity(0, {0, })
+        if self._os is not None:
+            self._os.sched_setaffinity(0, {0, })
         self.conn = rpyc.connect_thread(rpyc.ClassicService, self.cfg, rpyc.ClassicService, self.cfg)
         self.bg_threads = [rpyc.BgServingThread(self.conn) for i in range(3)]
 
