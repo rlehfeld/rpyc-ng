@@ -20,6 +20,10 @@ def splice_to_stderr(stream):
 
 
 class ClassicMode(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from . import test_magic
+
     def setUp(self):
         self.conn = rpyc.classic.connect_thread()
 
