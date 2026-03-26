@@ -12,24 +12,23 @@ on:
 jobs:
   unittest:
 
-    runs-on: ubuntu-latest
-
     strategy:
       fail-fast: false
       matrix:
-        PYTHON_VERSION: ["3", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15.0-alpha.5"]
-        RPYC_BIND_THREADS: ["true", "false"]
-
-    name: Unittest (${{ matrix.python_version }}, bind_threads=${{ matrix.RPYC_BIND_THREADS }})
+        os: [ "ubuntu-latest", "windows-latest" ]
+        python-version: ["3", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15.0-alpha.5"]
+        rpyc-bind-threads: ["true", "false"]
+    runs-on: ${{ matrix.os }}
+    name: Unittest (${{ matrix.python-version }}, bind_threads=${{ matrix.rpyc-bind-threads }})
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python ${{ matrix.PYTHON_VERSION }}
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.PYTHON_VERSION }}
+          python-version: ${{ matrix.python-version }}
       - name: Install gdb
-        if: ${{ matrix.PYTHON_VERSION == '3.12' }}
+        if: ${{ matrix.python-version == '3.12' }}
         run: |
           sudo apt-get -o DPkg::Lock::Timeout=-1 install -y gdb
       - name: Install dependencies
@@ -54,10 +53,10 @@ jobs:
           cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys
           uname -a
       - name: Run unittest with default settings
-        if: ${{ matrix.RPYC_BIND_THREADS == 'false' }}
+        if: ${{ matrix.rpyc-bind-threads == 'false' }}
         run: |
           RPYC_SKIP_IPV6="false" python -m unittest discover -v
       - name: Run unittest with RPYC_BIND_THREADS enabled
-        if: ${{ matrix.RPYC_BIND_THREADS == 'true' }}
+        if: ${{ matrix.rpyc-bind-threads == 'true' }}
         run: |
-          RPYC_BIND_THREADS="${{ matrix.RPYC_BIND_THREADS }}" RPYC_SKIP_IPV6="false" python -m unittest discover -v
+          RPYC_BIND_THREADS="${{ matrix.rpyc-bind-threads }}" RPYC_SKIP_IPV6="false" python -m unittest discover -v
