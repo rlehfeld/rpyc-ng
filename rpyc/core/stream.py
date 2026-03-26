@@ -43,8 +43,12 @@ class Stream:
 
     def close(self):
         """closes the stream, releasing any system resources associated with it"""
-        self._socket_w.close()
-        self._socket_r.close()
+        self._socket_w, socket_w = None, self._socket_w
+        if socket_w is not None:
+            socket_w.close()
+        self._socket_r, socket_r = None, self._socket_r
+        if socket_r is not None:
+            socket_r.close()
 
     @property
     def closed(self):
@@ -76,9 +80,12 @@ class Stream:
 
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
             sfd = self.fileno()
-            wfd = self._socket_r.fileno()
             p.register(sfd, "r")
-            p.register(wfd, "r")
+            if self._socket_r is not None:
+                wfd = self._socket_r.fileno()
+                p.register(wfd, "r")
+            else:
+                wfd = -1
             while True:
                 try:
                     rl = p.poll(timeout.timeleft())
