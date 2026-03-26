@@ -619,7 +619,7 @@ class Win32PipeStream(Stream):
                     return False
                 timeout.sleep(interval)
         except pywintypes.error as ex:
-            if ex[0] == 109:  # error: The pipe has been ended.
+            if ex.args[0] == 109:  # error: The pipe has been ended.
                 raise EOFError(ex)
             raise
         except TypeError as ex:
@@ -776,7 +776,7 @@ class NamedPipeStream(Win32PipeStream):
                                                           self.poll_buffer,
                                                           self.read_overlapped)
                 except pywintypes.error as ex:
-                    if ex[0] == 109:  # error: The pipe has been ended.
+                    if ex.args[0] == 109:  # error: The pipe has been ended.
                         raise EOFError(ex)
                     raise
                 except TypeError as ex:
