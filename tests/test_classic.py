@@ -54,7 +54,7 @@ class ClassicMode(unittest.TestCase):
         finally:
             conn.close()
             worker.join()
-        if if sys.platform != "win32":
+        if sys.platform != "win32":
             self.assertEqual(conn.proc.wait(), 0)
         else:
             self.assertTrue(conn.proc.wait() in (0, 120))
