@@ -24,11 +24,14 @@ retry_errnos = (errno.EAGAIN, errno.EWOULDBLOCK)
 class Stream:
     """Base Stream"""
 
-    __slots__ = ('_socket_r', '_socket_w', '_predicate', '_lock', '_polling')
+    __slots__ = ('_socket_r', '_socket_w',
+                 '_predicate',
+                 '_lock', '_polling', '_listening')
 
     def __init__(self):
         self._lock = threading.Condition()
         self._polling = False
+        self._listening = False
         self._predicate = None
 
         self._socket_r, self._socket_w = socket.socketpair()
@@ -83,6 +86,8 @@ class Stream:
                 return False
             self._predicate = predicate
             self._polling = True
+            socket_r = self._socket_r
+            self._listening = socket_r is not None
 
         timeout = Timeout(timeout)
         try:
@@ -91,8 +96,7 @@ class Stream:
 
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
             sfd = self.fileno()
-            socket_r = self._socket_r
-            if socket_r:
+            if socket_r is not None:
                 wfd = socket_r.fileno()
                 p.register(wfd, "r")
             else:
@@ -111,7 +115,11 @@ class Stream:
                     if c == b'C':
                         # notification for socket closing
                         p.unregister(wfd)
+                        socket_r = None
                         wfd = None
+                        with self._lock:
+                            self._listening = False
+                            self._lock.notify()
                     if predicate is not None and predicate():
                         return False
                     continue
@@ -128,6 +136,7 @@ class Stream:
             with self._lock:
                 self._predicate = None
                 self._polling = False
+                self._listening = False
                 self._lock.notify()
 
     def read(self, count):
