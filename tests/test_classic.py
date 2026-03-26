@@ -85,7 +85,7 @@ class ClassicMode(unittest.TestCase):
     def test_modules(self):
         self.assertIn('tests.test_magic', self.conn.modules)
         self.assertNotIn('test_badmagic', self.conn.modules)
-        self.assertIsNone(self.conn.builtins.locals()['self']._last_traceback)
+        self.assertIsNone(getattr(self.conn.builtins.locals()['self'], '_Connection__last_traceback'))
 
 
 if __name__ == "__main__":

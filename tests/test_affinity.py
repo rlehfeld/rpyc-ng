@@ -20,12 +20,12 @@ class Test_Affinity(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Construct the a copy of ClassicServer that embeds a sleep(0) into _dispatch and set affinity"""
-        cls._orig_func = rpyc.core.protocol.Connection._dispatch
+        cls._orig_func = getattr(rpyc.core.protocol.Connection, '_Connection__dispatch')
 
         def _sleepy_dispatch(self, data):
             time.sleep(0.0)
             return cls._orig_func(self, data)
-        setattr(rpyc.core.protocol.Connection, '_dispatch', _sleepy_dispatch)
+        setattr(rpyc.core.protocol.Connection, '_Connection__dispatch', _sleepy_dispatch)
         cls.cfg = {'sync_request_timeout': 5}
         if sys.platform != "linux":
             print("Running Test_Affinity is less productive on non-linux systems...")
