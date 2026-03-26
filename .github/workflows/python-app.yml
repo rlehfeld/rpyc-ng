@@ -63,11 +63,22 @@ jobs:
           echo StrictHostKeyChecking no >> $env:USERPROFILE\.ssh\config
           ssh-keygen -q -t ed25519 -f $env:USERPROFILE\.ssh\id_ed25519 -N ''
           type $env:USERPROFILE\.ssh\id_ed25519.pub >> $env:USERPROFILE\.ssh\authorized_keys
-      - name: Run unittest with default settings
-        if: ${{ matrix.rpyc-bind-threads == 'false' }}
+      - name: Run unittest with default settings on Linux
+        if: ${{ matrix.rpyc-bind-threads == 'false' && matrix.os == 'ubuntu-latest' }}
         run: |
           RPYC_SKIP_IPV6="false" python -m unittest discover -v
-      - name: Run unittest with RPYC_BIND_THREADS enabled
-        if: ${{ matrix.rpyc-bind-threads == 'true' }}
+      - name: Run unittest with RPYC_BIND_THREADS enabled on Linux
+        if: ${{ matrix.rpyc-bind-threads == 'true' && matrix.os == 'ubuntu-latest'}}
         run: |
           RPYC_BIND_THREADS="${{ matrix.rpyc-bind-threads }}" RPYC_SKIP_IPV6="false" python -m unittest discover -v
+      - name: Run unittest with default settings on Windows
+        if: ${{ matrix.rpyc-bind-threads == 'false' && matrix.os == 'windows-latest' }}
+        run: |
+          set RPYC_SKIP_IPV6="false"
+	  python -m unittest discover -v
+      - name: Run unittest with RPYC_BIND_THREADS enabled on Windows
+        if: ${{ matrix.rpyc-bind-threads == 'true' && matrix.os == 'windows-latest' }}
+        run: |
+          set RPYC_BIND_THREADS="${{ matrix.rpyc-bind-threads }}"
+	  set RPYC_SKIP_IPV6="false"
+	  python -m unittest discover -v
