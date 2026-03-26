@@ -30,7 +30,7 @@ REMOTE_LINE = "{0}({{}}){1}".format(REMOTE_LINE_START, REMOTE_LINE_END)
 
 
 def dump(typ, val, tb, include_local_traceback, include_local_version):
-    """Dumps the given exceptions info, as returned by ``sys.exc_info()``
+    """Dumps the given exceptions info, as e.g. returned by ``sys.exc_info()``
 
     :param typ: the exception's type (class)
     :param val: the exceptions' value (instance)

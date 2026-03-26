@@ -82,8 +82,7 @@ class Stream:
             while True:
                 try:
                     rl = p.poll(timeout.timeleft())
-                except select_error:
-                    ex = sys.exc_info()[1]
+                except select_error as ex:
                     if ex.args[0] == errno.EINTR:
                         continue
                     else:
@@ -96,12 +95,11 @@ class Stream:
 
                 return any(sfd == fd for fd, _ in rl)
 
-        except ValueError:
+        except ValueError as ex:
             # if the underlying call is a select(), then the following errors may happen:
             # - "ValueError: filedescriptor cannot be a negative integer (-1)"
             # - "ValueError: filedescriptor out of range in select()"
             # let's translate them to select.error
-            ex = sys.exc_info()[1]
             raise select_error(str(ex))
         finally:
             with self._lock:
@@ -308,9 +306,8 @@ class SocketStream(Stream):
     def fileno(self):
         try:
             fileno = self.sock.fileno()
-        except socket.error:
+        except socket.error as ex:
             self.close()
-            ex = sys.exc_info()[1]
             if get_exc_errno(ex) == errno.EBADF:
                 raise EOFError()
             else:
@@ -327,8 +324,7 @@ class SocketStream(Stream):
                 buf = self.sock.recv(min(self.MAX_IO_CHUNK, count))
             except socket.timeout:
                 continue
-            except socket.error:
-                ex = sys.exc_info()[1]
+            except socket.error as ex:
                 if get_exc_errno(ex) in retry_errnos:
                     # windows just has to be a bitch
                     continue
@@ -346,8 +342,7 @@ class SocketStream(Stream):
             while data:
                 count = self.sock.send(data[:self.MAX_IO_CHUNK])
                 data = data[count:]
-        except socket.error:
-            ex = sys.exc_info()[1]
+        except socket.error as ex:
             self.close()
             raise EOFError(ex)
 
@@ -477,8 +472,7 @@ class PipeStream(Stream):
         while True:
             try:
                 p.poll()
-            except select_error:
-                ex = sys.exc_info()[1]
+            except select_error as ex:
                 if ex.args[0] == errno.EINTR:
                     continue
                 buf = None
@@ -512,8 +506,7 @@ class PipeStream(Stream):
         except EOFError:
             self.close()
             raise
-        except EnvironmentError:
-            ex = sys.exc_info()[1]
+        except EnvironmentError as ex:
             self.close()
             raise EOFError(ex)
 
@@ -523,8 +516,7 @@ class PipeStream(Stream):
                 chunk = data[:self.MAX_IO_CHUNK]
                 written = os.write(self.outgoing.fileno(), chunk)
                 data = data[written:]
-        except EnvironmentError:
-            ex = sys.exc_info()[1]
+        except EnvironmentError as ex:
             self.close()
             raise EOFError(ex)
 
@@ -589,13 +581,11 @@ class Win32PipeStream(Stream):
                 dummy, buf = win32file.ReadFile(self.incoming, int(min(self.MAX_IO_CHUNK, count)))
                 count -= len(buf)
                 data.append(buf)
-        except TypeError:
-            ex = sys.exc_info()[1]
+        except TypeError as ex:
             if not self.closed:
                 raise
             raise EOFError(ex)
-        except win32file.error:
-            ex = sys.exc_info()[1]
+        except win32file.error as ex:
             self.close()
             raise EOFError(ex)
         return BYTES_LITERAL("").join(data)
@@ -605,13 +595,11 @@ class Win32PipeStream(Stream):
             while data:
                 dummy, count = win32file.WriteFile(self.outgoing, data[:self.MAX_IO_CHUNK])
                 data = data[count:]
-        except TypeError:
-            ex = sys.exc_info()[1]
+        except TypeError as ex:
             if not self.closed:
                 raise
             raise EOFError(ex)
-        except win32file.error:
-            ex = sys.exc_info()[1]
+        except win32file.error as ex:
             self.close()
             raise EOFError(ex)
 
@@ -630,8 +618,11 @@ class Win32PipeStream(Stream):
                 if timeout.expired():
                     return False
                 timeout.sleep(interval)
-        except (TypeError, pywintypes.error):
-            ex = sys.exc_info()[1]
+        except pywintypes.error as ex:
+            if ex[0] == 109:  # error: The pipe has been ended.
+                raise EOFError(ex)
+            raise
+        except TypeError as ex:
             if not self.closed:
                 raise
             raise EOFError(ex)
@@ -751,13 +742,11 @@ class NamedPipeStream(Win32PipeStream):
                 n = win32file.GetOverlappedResult(self.incoming, self.read_overlapped, 1)
                 count -= n
                 data.append(buf[:n])
-        except TypeError:
-            ex = sys.exc_info()[1]
+        except TypeError as ex:
             if not self.closed:
                 raise
             raise EOFError(ex)
-        except win32file.error:
-            ex = sys.exc_info()[1]
+        except win32file.error as ex:
             self.close()
             raise EOFError(ex)
         return BYTES_LITERAL("").join(data)
@@ -767,13 +756,11 @@ class NamedPipeStream(Win32PipeStream):
             while data:
                 dummy, count = win32file.WriteFile(self.outgoing, data[:self.MAX_IO_CHUNK], self.write_overlapped)
                 data = data[count:]
-        except TypeError:
-            ex = sys.exc_info()[1]
+        except TypeError as ex:
             if not self.closed:
                 raise
             raise EOFError(ex)
-        except win32file.error:
-            ex = sys.exc_info()[1]
+        except win32file.error as ex:
             self.close()
             raise EOFError(ex)
 
@@ -784,9 +771,18 @@ class NamedPipeStream(Win32PipeStream):
             wait_time = int(max(1, interval * 1000))
 
             if not self.poll_read:
-                hr, self.poll_buffer = win32file.ReadFile(self.incoming,
+                try:
+                    hr, self.poll_buffer = win32file.ReadFile(self.incoming,
                                                           self.poll_buffer,
                                                           self.read_overlapped)
+                except pywintypes.error as ex:
+                    if ex[0] == 109:  # error: The pipe has been ended.
+                        raise EOFError(ex)
+                    raise
+                except TypeError as ex:
+                    if not self.closed:
+                        raise
+                    raise EOFError(ex)
                 self.poll_read = True
                 if hr == 0:
                     return True
@@ -800,8 +796,7 @@ class NamedPipeStream(Win32PipeStream):
                 if timeout.expired():
                     return False
 
-        except TypeError:
-            ex = sys.exc_info()[1]
+        except TypeError as ex:
             if not self.closed:
                 raise
             raise EOFError(ex)
