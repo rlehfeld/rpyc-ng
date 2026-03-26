@@ -48,15 +48,15 @@ class Stream:
             return not self._polling
 
         with self._lock:
-            if self._socket_r is not None:
+            socket_w = self._socket_w
+            if socket_w is not None:
+                self._socket_w = None
                 if not predicate():
-                    self._socket_w.send(b'C')
+                    socket_w.send(b'C')
                     self._lock.wait_for(predicate)
                 self._socket_r.close()
                 self._socket_r = None
-            if self._socket_w is not None:
-                self._socket_w.close()
-                self._socket_w = None
+                socket_w.close()
 
     @property
     def closed(self):
@@ -78,7 +78,7 @@ class Stream:
         """indicates whether the stream has data to read (within *timeout*
         seconds)"""
         with self._lock:
-            if self._socket_r is None:
+            if self._polling or self._socket_r is None:
                 return False
 
             self._predicate = predicate
@@ -103,10 +103,7 @@ class Stream:
                     else:
                         raise
                 if any(wfd == fd for fd, _ in rl):
-                    try:
-                        c = self._socket_r.recv(1)
-                    except EOFError:
-                        return False
+                    c = self._socket_r.recv(1)
                     if c == b'C':
                         # notification for closing
                         return False
