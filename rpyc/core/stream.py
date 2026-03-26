@@ -24,41 +24,41 @@ retry_errnos = (errno.EAGAIN, errno.EWOULDBLOCK)
 class Stream:
     """Base Stream"""
 
-    __slots__ = ('_socket_r', '_socket_w',
-                 '_predicate',
-                 '_lock', '_polling', '_listening')
+    __slots__ = ('__socket_r', '__socket_w',
+                 '__predicate',
+                 '__lock', '__polling', '__listening')
 
     def __init__(self):
-        self._lock = threading.Condition()
-        self._polling = False
-        self._listening = False
-        self._predicate = None
+        self.__lock = threading.Condition()
+        self.__polling = False
+        self.__listening = False
+        self.__predicate = None
 
-        self._socket_r, self._socket_w = socket.socketpair()
+        self.__socket_r, self.__socket_w = socket.socketpair()
         if hasattr(socket, 'SHUT_WR'):
-            self._socket_r.shutdown(socket.SHUT_WR)
+            self.__socket_r.shutdown(socket.SHUT_WR)
         if hasattr(socket, 'SHUT_RD'):
-            self._socket_w.shutdown(socket.SHUT_RD)
+            self.__socket_w.shutdown(socket.SHUT_RD)
 
         if fcntl:
-            fd = self._socket_r.fileno()
+            fd = self.__socket_r.fileno()
             flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     def close(self):
         """closes the stream, releasing any system resources associated with it"""
         def predicate():
-            return not self._listening
+            return not self.__listening
 
-        with self._lock:
-            socket_w = self._socket_w
+        with self.__lock:
+            socket_w = self.__socket_w
             if socket_w is not None:
-                self._socket_w = None
-                socket_r = self._socket_r
-                self._socket_r = None
+                self.__socket_w = None
+                socket_r = self.__socket_r
+                self.__socket_r = None
                 if not predicate():
                     socket_w.send(b'C')
-                    self._lock.wait_for(predicate)
+                    self.__lock.wait_for(predicate)
                 socket_r.close()
                 socket_w.close()
 
@@ -72,22 +72,22 @@ class Stream:
         raise NotImplementedError()
 
     def notify(self):
-        with self._lock:
-            if (self._socket_w is not None and
-                    self._predicate is not None and
-                    self._predicate()):
-                self._socket_w.send(b'N')
+        with self.__lock:
+            if (self.__socket_w is not None and
+                    self.__predicate is not None and
+                    self.__predicate()):
+                self.__socket_w.send(b'N')
 
     def poll(self, timeout, predicate=None):
         """indicates whether the stream has data to read (within *timeout*
         seconds)"""
-        with self._lock:
-            if self._polling:
+        with self.__lock:
+            if self.__polling:
                 return False
-            self._polling = True
-            self._predicate = predicate
-            socket_r = self._socket_r
-            self._listening = socket_r is not None
+            self.__polling = True
+            self.__predicate = predicate
+            socket_r = self.__socket_r
+            self.__listening = socket_r is not None
 
         timeout = Timeout(timeout)
         try:
@@ -117,9 +117,9 @@ class Stream:
                         p.unregister(wfd)
                         socket_r = None
                         wfd = None
-                        with self._lock:
-                            self._listening = False
-                            self._lock.notify()
+                        with self.__lock:
+                            self.__listening = False
+                            self.__lock.notify()
                     if predicate is not None and predicate():
                         return False
                     continue
@@ -133,11 +133,11 @@ class Stream:
             # let's translate them to select.error
             raise select_error(str(ex))
         finally:
-            with self._lock:
-                self._predicate = None
-                self._polling = False
-                self._listening = False
-                self._lock.notify()
+            with self.__lock:
+                self.__predicate = None
+                self.__polling = False
+                self.__listening = False
+                self.__lock.notify()
 
     def read(self, count):
         """reads **exactly** *count* bytes, or raise EOFError
@@ -399,16 +399,16 @@ class TunneledSocketStream(SocketStream):
 class PipeStream(Stream):
     """A stream over two simplex pipes (one used to input, another for output)"""
 
-    __slots__ = ("incoming", "outgoing", "_condition", "_ready", "_reader")
+    __slots__ = ("incoming", "outgoing", "__condition", "__ready", "__reader")
     MAX_IO_CHUNK = STREAM_CHUNK
 
     def __init__(self, incoming, outgoing):
         outgoing.flush()
         self.incoming = incoming
         self.outgoing = outgoing
-        self._condition = threading.Condition()
-        self._ready = BYTES_LITERAL("")
-        self._reader = worker(self._readthread, incoming)
+        self.__condition = threading.Condition()
+        self.__ready = BYTES_LITERAL("")
+        self.__reader = worker(self.__readthread, incoming)
 
     def __del__(self):
         self.close()
@@ -450,51 +450,51 @@ class PipeStream(Stream):
 
     @property
     def closed(self):
-        with self._condition:
-            if self._ready:
+        with self.__condition:
+            if self.__ready:
                 return False
             return self.incoming is ClosedFile
 
     def close(self):
-        with self._condition:
+        with self.__condition:
             incoming = self.incoming
             outgoing = self.outgoing
             self.incoming = ClosedFile
             self.outgoing = ClosedFile
-            reader = self._reader
-            self._reader = None
-            self._condition.notify_all()
+            reader = self.__reader
+            self.__reader = None
+            self.__condition.notify_all()
         incoming.close()
         outgoing.close()
         if reader:
             reader.join()
-        with self._condition:
-            self._ready = BYTES_LITERAL("")
-            self._condition.notify_all()
+        with self.__condition:
+            self.__ready = BYTES_LITERAL("")
+            self.__condition.notify_all()
 
     def fileno(self):
-        with self._condition:
+        with self.__condition:
             return self.incoming.fileno()
 
     def notify(self):
-        with self._condition:
-            self._condition.notify()
+        with self.__condition:
+            self.__condition.notify()
 
     def poll(self, timeout, predicate=None):
         def ready():
-            return (self._ready or self.incoming is ClosedFile or (predicate is not None and predicate()))
+            return (self.__ready or self.incoming is ClosedFile or (predicate is not None and predicate()))
 
-        with self._condition:
-            self._condition.wait_for(ready, timeout.timeleft())
+        with self.__condition:
+            self.__condition.wait_for(ready, timeout.timeleft())
             if predicate is not None and predicate():
                 return False
-            if self._ready:
+            if self.__ready:
                 return True
             if self.incoming is ClosedFile:
                 raise EOFError("stream has been closed")
             return False
 
-    def _readthread(self, incoming):
+    def __readthread(self, incoming):
         fd = incoming.fileno()
         if fcntl:
             flags = fcntl.fcntl(fd, fcntl.F_GETFL)
@@ -515,27 +515,27 @@ class PipeStream(Stream):
                     buf = os.read(fd, self.MAX_IO_CHUNK)
                 except OSError:
                     buf = None
-            with self._condition:
+            with self.__condition:
                 if buf:
-                    self._ready = self._ready + buf
+                    self.__ready = self.__ready + buf
                 else:
                     self.incoming = ClosedFile
-                self._condition.notify_all()
+                self.__condition.notify_all()
             if not buf:
                 incoming.close()
                 break
 
     def read(self, count):
         try:
-            with self._condition:
-                self._condition.wait_for(lambda: len(self._ready) >= count or self.incoming is ClosedFile)
-                if len(self._ready) < count:
-                    if len(self._ready) > 0:
-                        self._ready = BYTES_LITERAL("")
-                        self._condition.notify_all()
+            with self.__condition:
+                self.__condition.wait_for(lambda: len(self.__ready) >= count or self.incoming is ClosedFile)
+                if len(self.__ready) < count:
+                    if len(self.__ready) > 0:
+                        self.__ready = BYTES_LITERAL("")
+                        self.__condition.notify_all()
                     raise EOFError("stream has been closed")
-                data = self._ready[:count]
-                self._ready = self._ready[count:]
+                data = self.__ready[:count]
+                self.__ready = self.__ready[count:]
                 return data
         except EOFError:
             self.close()
@@ -559,15 +559,15 @@ class Win32PipeStream(Stream):
     """A stream over two simplex pipes (one used to input, another for output).
     This is an implementation for Windows pipes (which suck)"""
 
-    __slots__ = ("incoming", "outgoing", "_fileno", "_keepalive")
+    __slots__ = ("incoming", "outgoing", "__fileno", "__keepalive")
     PIPE_BUFFER_SIZE = 130000
     MAX_IO_CHUNK = STREAM_CHUNK
 
     def __init__(self, incoming, outgoing):
         import msvcrt
-        self._keepalive = (incoming, outgoing)
+        self.__keepalive = (incoming, outgoing)
         if hasattr(incoming, "fileno"):
-            self._fileno = incoming.fileno()
+            self.__fileno = incoming.fileno()
             incoming = msvcrt.get_osfhandle(incoming.fileno())
         if hasattr(outgoing, "fileno"):
             outgoing = msvcrt.get_osfhandle(outgoing.fileno())
@@ -588,7 +588,7 @@ class Win32PipeStream(Stream):
         return cls(r1, w2), cls(r2, w1)
 
     def fileno(self):
-        return self._fileno
+        return self.__fileno
 
     @property
     def closed(self):
