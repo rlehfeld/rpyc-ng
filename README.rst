@@ -20,7 +20,7 @@ Documentation can be found at https://rpyc.readthedocs.io
 
 .. References:
 
-.. _RPyC:                   https://github.com/tomerfiliba-org/rpyc
+.. _RPyC:                   ../..
 .. _remote procedure calls: http://en.wikipedia.org/wiki/Remote_procedure_calls
 .. _clustering:             http://en.wikipedia.org/wiki/Clustering
 .. _distributed-computing:  http://en.wikipedia.org/wiki/Distributed_computing
@@ -36,10 +36,10 @@ Documentation can be found at https://rpyc.readthedocs.io
    :target:            https://pypi.python.org/pypi/rpyc#downloads
    :alt:               Python Versions
 
-.. |Tests| image::     https://github.com/tomerfiliba-org/rpyc/actions/workflows/python-app.yml/badge.svg
-   :target:            https://github.com/tomerfiliba-org/rpyc/actions/workflows/python-app.yml
+.. |Tests| image::     ../../actions/workflows/python-app.yml/badge.svg
+   :target:            ../../actions/workflows/python-app.yml
    :alt:               Build Status
 
 .. |License| image::   https://img.shields.io/pypi/l/rpyc.svg?style=flat
-   :target:            https://github.com/tomerfiliba-org/rpyc/blob/master/LICENSE
+   :target:            LICENSE
    :alt:               License: MIT
