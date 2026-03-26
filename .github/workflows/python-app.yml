@@ -75,11 +75,11 @@ jobs:
       - name: Run unittest with default settings on Windows
         if: ${{ matrix.rpyc-bind-threads == 'false' && matrix.os == 'windows-latest' }}
         run: |
-          set RPYC_SKIP_IPV6=false
+          $env:RPYC_SKIP_IPV6 = "false"
           python -m unittest discover -v
       - name: Run unittest with RPYC_BIND_THREADS enabled on Windows
         if: ${{ matrix.rpyc-bind-threads == 'true' && matrix.os == 'windows-latest' }}
         run: |
-          set RPYC_BIND_THREADS=${{ matrix.rpyc-bind-threads }}
-          set RPYC_SKIP_IPV6=false
+          $env:RPYC_BIND_THREADS = "${{ matrix.rpyc-bind-threads }}"
+          $env:RPYC_SKIP_IPV6 = "false"
           python -m unittest discover -v
