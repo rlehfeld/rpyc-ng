@@ -51,11 +51,12 @@ class Stream:
             socket_w = self._socket_w
             if socket_w is not None:
                 self._socket_w = None
+                socket_r = self._socket_r
+                self._socket_r = None
                 if not predicate():
                     socket_w.send(b'C')
                     self._lock.wait_for(predicate)
-                self._socket_r.close()
-                self._socket_r = None
+                socket_r.close()
                 socket_w.close()
 
     @property
@@ -90,8 +91,9 @@ class Stream:
 
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
             sfd = self.fileno()
-            if self._socket_r:
-                wfd = self._socket_r.fileno()
+            socket_r = self._socket_r
+            if socket_r:
+                wfd = socket_r.fileno()
                 p.register(wfd, "r")
             else:
                 wfd = None
@@ -105,7 +107,7 @@ class Stream:
                     else:
                         raise
                 if wfd is not None and any(wfd == fd for fd, _ in rl):
-                    c = self._socket_r.recv(1)
+                    c = socket_r.recv(1)
                     if c == b'C':
                         # notification for socket closing
                         p.unregister(wfd)
