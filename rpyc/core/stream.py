@@ -78,9 +78,8 @@ class Stream:
         """indicates whether the stream has data to read (within *timeout*
         seconds)"""
         with self._lock:
-            if self._polling or self._socket_r is None:
+            if self._polling:
                 return False
-
             self._predicate = predicate
             self._polling = True
 
@@ -91,9 +90,12 @@ class Stream:
 
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
             sfd = self.fileno()
-            wfd = self._socket_r.fileno()
+            if self._socket_r:
+                wfd = self._socket_r.fileno()
+                p.register(wfd, "r")
+            else:
+                wfd = None
             p.register(sfd, "r")
-            p.register(wfd, "r")
             while True:
                 try:
                     rl = p.poll(timeout.timeleft())
@@ -102,11 +104,12 @@ class Stream:
                         continue
                     else:
                         raise
-                if any(wfd == fd for fd, _ in rl):
+                if wfd is not None and any(wfd == fd for fd, _ in rl):
                     c = self._socket_r.recv(1)
                     if c == b'C':
-                        # notification for closing
-                        return False
+                        # notification for socket closing
+                        p.unregister(wfd)
+                        wfd = None
                     if predicate is not None and predicate():
                         return False
                     continue
