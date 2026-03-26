@@ -56,12 +56,12 @@ jobs:
       - name: Init ssh settings on Windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          mkdir -pv \$env:USERPROFILE\\.ssh
-          #chmod 700 \$env:USERPROFILE\\.ssh
-          echo NoHostAuthenticationForLocalhost yes >> \$env:USERPROFILE\\.ssh\\config
-          echo StrictHostKeyChecking no >> \$env:USERPROFILE\\.ssh\\config
-          ssh-keygen -q -t ed25519 -f \$env:USERPROFILE\\.ssh\\id_ed25519 -N ''
-          type \$env:USERPROFILE\\.ssh\\id_ed25519.pub >> \$env:USERPROFILE\\.ssh\\authorized_keys
+          mkdir $env:USERPROFILE\.ssh
+          #chmod 700 $env:USERPROFILE\.ssh
+          echo NoHostAuthenticationForLocalhost yes >> $env:USERPROFILE\.ssh\config
+          echo StrictHostKeyChecking no >> $env:USERPROFILE\.ssh\config
+          ssh-keygen -q -t ed25519 -f $env:USERPROFILE\.ssh\id_ed25519 -N ''
+          type $env:USERPROFILE\.ssh\id_ed25519.pub >> $env:USERPROFILE\.ssh\authorized_keys
       - name: Run unittest with default settings
         if: ${{ matrix.rpyc-bind-threads == 'false' }}
         run: |
