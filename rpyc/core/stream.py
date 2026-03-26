@@ -115,7 +115,7 @@ class Stream:
                 if wfd is not None and any(wfd == fd for fd, _ in rl):
                     try:
                         c = socket_r.recv(1)
-                    except OSError:
+                    except BaseException:
                         print(f'exc {os.getpid()=}, {threading.get_ident()} {self.__listening=!r}, {self.__polling=!r}', file=sys.__stderr__)
                         raise
 
