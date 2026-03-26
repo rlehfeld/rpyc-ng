@@ -24,10 +24,11 @@ retry_errnos = (errno.EAGAIN, errno.EWOULDBLOCK)
 class Stream:
     """Base Stream"""
 
-    __slots__ = ('_socket_r', '_socket_w', '_predicate', '_lock')
+    __slots__ = ('_socket_r', '_socket_w', '_predicate', '_lock', '_polling')
 
     def __init__(self):
-        self._lock = threading.Lock()
+        self._lock = threading.Condition()
+        self._polling = False
         self._predicate = None
 
         self._socket_r, self._socket_w = socket.socketpair()
@@ -46,9 +47,14 @@ class Stream:
         self._socket_w, socket_w = None, self._socket_w
         if socket_w is not None:
             socket_w.close()
-        self._socket_r, socket_r = None, self._socket_r
-        if socket_r is not None:
-            socket_r.close()
+
+            def predicate():
+                return not self._polling
+
+            with self._lock:
+                self._lock.wait_for(predicate)
+                self._socket_r.close()
+                self._socket_r = None
 
     @property
     def closed(self):
@@ -72,6 +78,7 @@ class Stream:
         seconds)"""
         with self._lock:
             self._predicate = predicate
+            self._polling = True
 
         timeout = Timeout(timeout)
         try:
@@ -95,7 +102,10 @@ class Stream:
                     else:
                         raise
                 if any(wfd == fd for fd, _ in rl):
-                    self._socket_r.recv(1)
+                    try:
+                        self._socket_r.recv(1)
+                    except EOFError:
+                        return False
                     if predicate is not None and predicate():
                         return False
                     continue
@@ -111,6 +121,8 @@ class Stream:
         finally:
             with self._lock:
                 self._predicate = None
+                self._polling = False
+                self._lock.notify()
 
     def read(self, count):
         """reads **exactly** *count* bytes, or raise EOFError
