@@ -795,7 +795,10 @@ class NamedPipeStream(Win32PipeStream):
                                                           self.poll_buffer,
                                                           self.read_overlapped)
                 except pywintypes.error as ex:
-                    if ex.args[0] == 109:  # error: The pipe has been ended.
+                    if ex.args[0] in (
+                            109,  # error: The pipe has been ended.
+                            233,  # error: No process is on the other end of the pipe.
+                    ):
                         raise EOFError(ex)
                     raise
                 except TypeError as ex:
