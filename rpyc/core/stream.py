@@ -48,7 +48,7 @@ class Stream:
     def close(self):
         """closes the stream, releasing any system resources associated with it"""
         def predicate():
-            return not self._polling
+            return not self._listening
 
         with self._lock:
             socket_w = self._socket_w
@@ -84,8 +84,8 @@ class Stream:
         with self._lock:
             if self._polling:
                 return False
-            self._predicate = predicate
             self._polling = True
+            self._predicate = predicate
             socket_r = self._socket_r
             self._listening = socket_r is not None
 
