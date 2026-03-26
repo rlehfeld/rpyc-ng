@@ -48,7 +48,7 @@ def bar():
 
 class TeleportationTest(unittest.TestCase):
     def setUp(self):
-        server_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "bin", "rpyc_classic.py")
+        server_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin", "rpyc_classic.py")
         self.proc = subprocess.Popen([sys.executable, server_file, "--mode=oneshot", "--host=localhost", "-p0"],
                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         line = self.proc.stdout.readline().strip()
