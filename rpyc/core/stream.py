@@ -44,17 +44,19 @@ class Stream:
 
     def close(self):
         """closes the stream, releasing any system resources associated with it"""
-        self._socket_w, socket_w = None, self._socket_w
-        if socket_w is not None:
-            socket_w.close()
+        def predicate():
+            return not self._polling
 
-            def predicate():
-                return not self._polling
-
-            with self._lock:
-                self._lock.wait_for(predicate)
+        with self._lock:
+            if self._socket_r is not None:
+                if not predicate():
+                    self._socket_w.send(b'C')
+                    self._lock.wait_for(predicate)
                 self._socket_r.close()
                 self._socket_r = None
+            if self._socket_w is not None:
+                self._socket_w.close()
+                self._socket_w = None
 
     @property
     def closed(self):
@@ -67,16 +69,18 @@ class Stream:
 
     def notify(self):
         with self._lock:
-            if self._predicate is not None and self._predicate():
-                try:
-                    self._socket_w.send(b'N')
-                except AttributeError:
-                    pass
+            if (self._socket_w is not None and
+                    self._predicate is not None and
+                    self._predicate()):
+                self._socket_w.send(b'N')
 
     def poll(self, timeout, predicate=None):
         """indicates whether the stream has data to read (within *timeout*
         seconds)"""
         with self._lock:
+            if self._socket_r is None:
+                return False
+
             self._predicate = predicate
             self._polling = True
 
@@ -87,12 +91,9 @@ class Stream:
 
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
             sfd = self.fileno()
+            wfd = self._socket_r.fileno()
             p.register(sfd, "r")
-            if self._socket_r is not None:
-                wfd = self._socket_r.fileno()
-                p.register(wfd, "r")
-            else:
-                wfd = -1
+            p.register(wfd, "r")
             while True:
                 try:
                     rl = p.poll(timeout.timeleft())
@@ -103,8 +104,11 @@ class Stream:
                         raise
                 if any(wfd == fd for fd, _ in rl):
                     try:
-                        self._socket_r.recv(1)
+                        c = self._socket_r.recv(1)
                     except EOFError:
+                        return False
+                    if c == b'C':
+                        # notification for closing
                         return False
                     if predicate is not None and predicate():
                         return False
