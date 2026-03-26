@@ -89,10 +89,11 @@ class Server(object):
 
             if reuse_addr:
                 if sys.platform == "win32":
-                    self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, True)
-                self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
+                    self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+                else:
+                    self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             if nodelay:
-                self.listener.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+                self.listener.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.listener.bind(address)
             self.listener.settimeout(listener_timeout)
 
