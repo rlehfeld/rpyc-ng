@@ -87,10 +87,9 @@ class Server(object):
             address = socket.getaddrinfo(hostname, port, family=family, type=socket.SOCK_STREAM,
                                          proto=socket.IPPROTO_TCP, flags=socket.AI_PASSIVE)[0][-1]
 
-            if reuse_addr and sys.platform != "win32":
-                # warning: reuseaddr is not what you'd expect on windows!
-                # it allows you to bind an already bound port, resulting in
-                # "unexpected behavior" (quoting MSDN)
+            if reuse_addr:
+                if sys.platform == "win32":
+                    self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
                 self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             if nodelay:
                 self.listener.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
