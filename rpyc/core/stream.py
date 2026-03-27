@@ -59,8 +59,10 @@ class Stream:
                 if not predicate():
                     socket_w.send(b'C')
                     self.__lock.wait_for(predicate)
-                socket_r.close()
+                if hasattr(socket, 'SHUT_WR'):
+                    socket_w.shutdown(socket.SHUT_WR)
                 socket_w.close()
+                socket_r.close()
 
     @property
     def closed(self):
@@ -328,17 +330,18 @@ class SocketStream(Stream):
     def close(self):
         sock, self.sock = self.sock, ClosedFile
         if sock is not ClosedFile:
-            try:
-                # inform peer that we are finished sending
-                sock.shutdown(socket.SHUT_WR)
-                while True:
-                    # wait for peer to close it's sending side as well
-                    buf = sock.recv(self.MAX_IO_CHUNK)
-                    if not buf:
-                        break
-            except Exception:
-                pass
-        sock.close()
+            if hasattr(socket, 'SHUT_WR'):
+                try:
+                    # inform peer that we are finished sending
+                    sock.shutdown(socket.SHUT_WR)
+                    while True:
+                        # wait for peer to close it's sending side as well
+                        buf = sock.recv(self.MAX_IO_CHUNK)
+                        if not buf:
+                            break
+                except Exception:
+                    pass
+            sock.close()
         super().close()
 
     def fileno(self):
