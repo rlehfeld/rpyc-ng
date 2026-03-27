@@ -40,16 +40,12 @@ class Stream:
         if hasattr(socket, 'SHUT_RD'):
             self.__socket_w.shutdown(socket.SHUT_RD)
 
-        if not hasattr(socket, "AF_UNIX"):
-            # test socket connection (bug with windows Implementation?)
-            # connection seem to break here for unknown reason
-            self.__socket_w.send(b'T')
-            self.__socket_r.recv(1)
-
         if fcntl:
             fd = self.__socket_r.fileno()
             flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+        else:
+            self.__socket_r.setblocking(False)
 
     def close(self):
         """closes the stream, releasing any system resources associated with it"""
@@ -512,6 +508,11 @@ class PipeStream(Stream):
         if fcntl:
             flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+        else:
+            try:
+                incoming.setblocking(False)
+            except AttributeError:
+                pass
 
         p = poll()
         p.register(fd, "r")
