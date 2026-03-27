@@ -90,7 +90,16 @@ class Server(object):
             if sys.platform == "win32":
                 self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
             if reuse_addr and port != 0:
-                self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                try:
+                    self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                except OSError:
+                    if sys.platform != "win32":
+                        raise
+                    if "[WinError 10022]" not in OSError.args[0]:
+                        raise
+                    # on windows, we might receive
+                    # OSError: [WinError 10022] An invalid argument was supplied
+                    # e.g when operating under GEvent
             if nodelay:
                 self.listener.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.listener.bind(address)

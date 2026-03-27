@@ -231,9 +231,19 @@ class TCPRegistryServer(RegistryServer):
 
         family, socktype, proto, _, sockaddr = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)[0]
         sock = socket.socket(family, socktype, proto)
-        if reuse_addr and sys.platform != "win32":
-            # warning: reuseaddr is not what you expect on windows!
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if sys.platform == "win32":
+            self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        if reuse_addr and port != 0:
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            except OSError:
+                if sys.platform != "win32":
+                    raise
+                if "[WinError 10022]" not in OSError.args[0]:
+                    raise
+                # on windows, we might receive
+                # OSError: [WinError 10022] An invalid argument was supplied
+                # e.g when operating under GEvent
         sock.bind(sockaddr)
         sock.listen(10)
         sock.settimeout(self.TIMEOUT)
