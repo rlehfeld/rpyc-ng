@@ -1,9 +1,9 @@
 from gevent import monkey
 monkey.patch_all()
-import gevent
+import gevent  # noqa, E402 need to be imported after monkey patch
 
-import rpyc
-from rpyc.utils.server import GeventServer
+import rpyc  # noqa, E402 need to be imported after monkey patch
+from rpyc.utils.server import GeventServer  # noqa, E402 need to be imported after monkey patch
 
 
 class GeventService(rpyc.SlaveService):

@@ -240,8 +240,8 @@ class NetrefMetaclass(type):
                     '____id_pack__',
                     '____refcount__',
                     '____hash__'
-                ) and type(self) is NetrefMetaclass and
-                not isinstance(value, MemberDescriptor)):
+                    ) and type(self) is NetrefMetaclass and
+                    not isinstance(value, MemberDescriptor)):
                 value = MemberDescriptor(value)
                 value.__set_name__(self, name)
             if type(self) is NetrefMetaclass:

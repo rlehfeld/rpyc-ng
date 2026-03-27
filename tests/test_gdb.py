@@ -36,7 +36,9 @@ class ParentGDB(rpyc.Service):
         return self._gdb_svc_conn.root.get()
 
 
-@unittest.skipUnless(which('gdb') is not None and sys.platform != "win32", "Skipping gdb example test since gdb not found or windows")
+@unittest.skipUnless(
+    which('gdb') is not None and sys.platform != "win32",
+    "Skipping gdb example test since gdb not found or windows")
 class Test_GDB(unittest.TestCase):
 
     def setUp(self):

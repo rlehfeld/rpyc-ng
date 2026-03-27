@@ -30,8 +30,11 @@ class TestRace(unittest.TestCase):
 
             # schedule KeyboardInterrupt
             thread_id = threading.get_ident()
-            _ = lambda: signal.pthread_kill(thread_id, signal.SIGINT)
-            timer = threading.Timer(1, _)
+
+            def sendsigint():
+                signal.pthread_kill(thread_id, signal.SIGINT)
+
+            timer = threading.Timer(1, sendsigint)
             timer.start()
 
             a_result = self.a_str("")  # request
