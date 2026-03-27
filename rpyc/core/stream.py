@@ -29,7 +29,7 @@ class Stream:
                  '__lock', '__polling', '__listening')
 
     def __init__(self):
-        self.__lock = threading.Condition()
+        self.__lock = threading.Condition(threading.Lock())
         self.__polling = False
         self.__listening = False
         self.__predicate = None
@@ -410,7 +410,7 @@ class PipeStream(Stream):
         outgoing.flush()
         self.incoming = incoming
         self.outgoing = outgoing
-        self.__condition = threading.Condition()
+        self.__condition = threading.Condition(threading.Lock())
         self.__ready = BYTES_LITERAL("")
         self.__reader = worker(self.__readthread, incoming)
 

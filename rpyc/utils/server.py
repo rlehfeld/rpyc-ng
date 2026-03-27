@@ -330,7 +330,7 @@ class ThreadedServer(Server):
     """
 
     def __init__(self, *args, **kwargs):
-        self._cond = threading.Condition()
+        self._cond = threading.Condition(threading.Lock())
         self._workers = set()
         self._terminated = set()
         super().__init__(*args, **kwargs)

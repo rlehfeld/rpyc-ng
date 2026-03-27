@@ -162,7 +162,7 @@ class Connection:
         self.__seqcounter = itertools.count()
         self.__sendlock = Lock()
         self.__sending = False
-        self.__recv_event = Condition()
+        self.__recv_event = Condition(Lock())
         self._receiving = False
         self.__request_callbacks = {}
         self.__local_objects = RefCountingColl()
