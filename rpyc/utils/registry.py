@@ -233,7 +233,7 @@ class TCPRegistryServer(RegistryServer):
         family, socktype, proto, _, sockaddr = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)[0]
         sock = socket.socket(family, socktype, proto)
         if sys.platform == "win32":
-            self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
         if reuse_addr and port != 0:
             try:
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
