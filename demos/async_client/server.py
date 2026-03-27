@@ -3,10 +3,8 @@
 
 Additional context: https://github.com/tomerfiliba-org/rpyc/issues/491#issuecomment-1131843406
 """
-import logging
 import time
 import rpyc
-import threading
 
 
 logger = rpyc.setup_logger(namespace='server')

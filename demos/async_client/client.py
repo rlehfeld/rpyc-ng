@@ -31,11 +31,11 @@ def async_example(connection, event):
 
     bgsrv = rpyc.BgServingThread(connection)
     ares = _async_function(event, block_server_thread=False)
-    value = ares.value
+    ares.value
     event.clear()
     logger.info('Running buggy blocking example...')
     ares = _async_function(event, block_server_thread=True)
-    value = ares.value
+    ares.value
     event.clear()
     bgsrv.stop()
 

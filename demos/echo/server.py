@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import inspect
 import logging
 # import gevent
 # from gevent import monkey
