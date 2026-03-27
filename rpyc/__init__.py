@@ -41,5 +41,3 @@ from rpyc.utils.server import OneShotServer, ThreadedServer, ThreadPoolServer, F
 from rpyc import cli
 
 __author__ = "Tomer Filiba (tomerfiliba@gmail.com)"
-
-globals()['async'] = async_     # backward compatibility
