@@ -327,7 +327,7 @@ class NetrefMetaclass(type):
             except BaseException as ex:
                 self.____hash__ = ex
         if isinstance(self.____hash__, BaseException):
-            raise self.____hash__
+            raise self.____hash__ from None
         return self.____hash__
 
 
