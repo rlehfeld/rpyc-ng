@@ -87,11 +87,10 @@ class Server(object):
             address = socket.getaddrinfo(hostname, port, family=family, type=socket.SOCK_STREAM,
                                          proto=socket.IPPROTO_TCP, flags=socket.AI_PASSIVE)[0][-1]
 
-            if reuse_addr:
-                if sys.platform == "win32":
-                    self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
-                else:
-                    self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if sys.platform == "win32":
+                self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            if reuse_addr and port != 0:
+                self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             if nodelay:
                 self.listener.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.listener.bind(address)
