@@ -92,10 +92,10 @@ class Server(object):
             if reuse_addr and port != 0:
                 try:
                     self.listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                except OSError:
+                except OSError as ex:
                     if sys.platform != "win32":
                         raise
-                    if "[WinError 10022]" not in OSError.args[0]:
+                    if "[WinError 10022]" not in ex.args[0]:
                         raise
                     # on windows, we might receive
                     # OSError: [WinError 10022] An invalid argument was supplied
