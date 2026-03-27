@@ -18,7 +18,7 @@ DELETED_ATTRS = frozenset([
 
 """the set of attributes that are local to the netref object"""
 LOCAL_ATTRS = frozenset([
-    '____conn__', '____id_pack__', '____refcount__', '____member__', '____bind_instance__',
+    '____conn__', '____id_pack__', '____refcount__', '____hash__', '____member__', '____bind_instance__',
     '__class__', '__cmp__', '__del__', '__delattr__',
     '__dir__', '__doc__', '__getattr__', '__getattribute__', '__hash__', '__instancecheck__', '__subclasscheck__',
     '__init__', '__metaclass__', '__module__', '__new__', '__reduce__',
@@ -90,7 +90,7 @@ def asyncreq(proxy, handler, *args):
 
 
 class Member:
-    __slots__ = "____conn__", "____id_pack__", "____refcount__"
+    __slots__ = "____conn__", "____id_pack__", "____refcount__", "____hash__"
 
 
 class MemberDescriptor:
@@ -147,6 +147,7 @@ class NetrefMetaclass(type):
                     '____id_pack__',
                     '____refcount__',
                     '____conn__',
+                    '____hash__',
                     '____member__',
                     '____bind_instance__',
                     'mro',
@@ -156,7 +157,8 @@ class NetrefMetaclass(type):
 
         for attr in (
                 '____refcount__',
-                '____conn__'
+                '____conn__',
+                '____hash__',
         ):
             if attr not in alldct:
                 dct[attr] = None
@@ -168,6 +170,7 @@ class NetrefMetaclass(type):
                 '____refcount__',
                 '____conn__',
                 '____id_pack__',
+                '____hash__',
         ):
             value = dct.get(attr, undefined)
             if value is not undefined and not isinstance(value, MemberDescriptor):
@@ -232,9 +235,13 @@ class NetrefMetaclass(type):
 
     def __setattr__(self, name, value):
         if name in LOCAL_ATTRS:
-            if (name in ('____conn__', '____id_pack__', '____refcount__') and
-                    type(self) is NetrefMetaclass and
-                    not isinstance(value, MemberDescriptor)):
+            if (name in (
+                    '____conn__',
+                    '____id_pack__',
+                    '____refcount__',
+                    '____hash__'
+                ) and type(self) is NetrefMetaclass and
+                not isinstance(value, MemberDescriptor)):
                 value = MemberDescriptor(value)
                 value.__set_name__(self, name)
             if type(self) is NetrefMetaclass:
@@ -309,9 +316,17 @@ class NetrefMetaclass(type):
         raise TypeError("isinstance() arg 2 must be a class, type, or tuple of classes and types")
 
     def __hash__(self):
-        if self.____conn__ is None or type(self) is NetrefMetaclass:
-            return super(type(self), self).__hash__()
-        return syncreq(self, consts.HANDLE_HASH)
+        # cache hashes for performance reasons
+        if self.____hash__ is None:
+            if self.____conn__ is None:
+                return super(type(self), self).__hash__()
+            try:
+                self.____hash__ = syncreq(self, consts.HANDLE_HASH)
+            except BaseException as ex:
+                self.____hash__ = ex
+        if isinstance(self.____hash__, BaseException):
+            raise self.____hash__
+        return self.____hash__
 
 
 class BaseNetref(metaclass=NetrefMetaclass):
@@ -364,6 +379,7 @@ class BaseNetref(metaclass=NetrefMetaclass):
         self.____conn__ = conn
         self.____id_pack__ = id_pack
         self.____refcount__ = 1
+        self.____hash__ = None
 
 
 class Method:

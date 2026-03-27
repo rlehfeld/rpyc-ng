@@ -34,7 +34,6 @@ class TestContextManagers(unittest.TestCase):
     def tearDown(self):
         self.conn.close()
 
-    @unittest.skip(reason="not supported as will cause unexpected behavior when deriving from proxy class")
     def test_hash_class(self):
         hesh = self.conn.builtins.hash
         mod = self.conn.modules.tests.test_magic
