@@ -14,6 +14,7 @@ more restrictive licensing.
 Refer to :file:`rpyc/scripts/rpyc_registry.py` for more info.
 """
 import sys
+import errno
 import socket
 import time
 import logging
@@ -239,7 +240,7 @@ class TCPRegistryServer(RegistryServer):
             except OSError as ex:
                 if sys.platform != "win32":
                     raise
-                if "[WinError 10022]" not in ex.args[0]:
+                if ex.errno != errno.EINVAL:
                     raise
                 # on windows, we might receive
                 # OSError: [WinError 10022] An invalid argument was supplied

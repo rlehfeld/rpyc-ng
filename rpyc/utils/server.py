@@ -5,7 +5,7 @@ import sys
 import os
 import socket
 import time
-import threading  # noqa: F401
+import threading
 import errno
 import logging
 try:
@@ -95,7 +95,7 @@ class Server(object):
                 except OSError as ex:
                     if sys.platform != "win32":
                         raise
-                    if "[WinError 10022]" not in ex.args[0]:
+                    if ex.errno != errno.EINVAL:
                         raise
                     # on windows, we might receive
                     # OSError: [WinError 10022] An invalid argument was supplied
