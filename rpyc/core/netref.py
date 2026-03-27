@@ -25,7 +25,7 @@ LOCAL_ATTRS = frozenset([
     '__reduce_ex__', '__repr__', '__setattr__', '__slots__', '__str__', '__bool__',
     '__weakref__', '__dict__', '__methods__', '__exit__',
     '__eq__', '__ne__', '__lt__', '__gt__', '__le__', '__ge__',
-    'mro', '__mro__',
+    'mro', '__mro__', '__bases__', '__base__',
 ]) | DELETED_ATTRS
 
 """a list of types considered built-in (shared between connections)
@@ -152,6 +152,8 @@ class NetrefMetaclass(type):
                     '____bind_instance__',
                     'mro',
                     '__mro__',
+                    '__bases__',
+                    '__base__',
             ):
                 dct[attr] = metacls.__dict__[attr]
 
