@@ -446,7 +446,7 @@ class Connection:
         with self.__recv_event:
             self.__recv_event.notify_all()
 
-    def serve(self, timeout=1, wait_for_lock=True, waiting=lambda: True):  # serving
+    def serve(self, timeout=1, wait_for_lock=True, predicate=None):  # serving
         """Serves a single request or reply that arrives within the given
         time frame (default is 1 sec). Note that the dispatching of a request
         might trigger multiple (nested) requests, thus this function may be
@@ -458,20 +458,20 @@ class Connection:
         if self.__bind_threads:
             return self.__serve_bound(timeout, wait_for_lock)
 
-        def predicate():
-            return not (self._receiving and waiting())
+        def can_receive_or_predicate():
+            return not self._receiving or (predicate is not None and predicate())
 
         with self.__recv_event:
             if self._receiving:
                 if not wait_for_lock:
                     return False
-                success = self.__recv_event.wait_for(predicate, timeout.timeleft())
-                if not success or not waiting():
+                success = self.__recv_event.wait_for(can_receive_or_predicate, timeout.timeleft())
+                if not success or (predicate is not None and predicate()):
                     return False
             self._receiving = True
 
         try:
-            data = self.__channel.poll(timeout, lambda: not waiting()) and self.__channel.recv()
+            data = self.__channel.poll(timeout, predicate) and self.__channel.recv()
 
         except Exception as exc:
             if isinstance(exc, EOFError):
@@ -1032,22 +1032,27 @@ class _Thread:
 
 
 class _UnlockGuard:
+    __slots__ = ('__lock', '__depth')
+
     def __init__(self, lock):
         self.__lock = lock
+        self.__depth = []
 
     def __enter__(self):
-        self.__depth = 0
+        depth = 0
         while True:
             try:
                 self.__lock.release()
             except RuntimeError:
                 break
             else:
-                self.__depth += 1
+                depth += 1
+        self.__depth.append(depth)
         return self
 
     def __exit__(self, t, v, tb):
-        for _ in range(self.__depth):
+        depth = self.__depth.pop(0)
+        for _ in range(depth):
             self.__lock.acquire()
 
 

@@ -1,10 +1,11 @@
 """
 Helpers and wrappers for common RPyC tasks
 """
-import time
+import threading
 from rpyc.lib import worker
 from rpyc.lib.colls import WeakValueDict
 from rpyc.lib.compat import callable
+from rpyc.core.protocol import _UnlockGuard
 from rpyc.core.consts import HANDLE_BUFFITER, HANDLE_CALL
 from rpyc.core.netref import syncreq, asyncreq
 
@@ -189,7 +190,7 @@ class timed(object):
         return f"timed({self.proxy.proxy!r}, {self.timeout!r})"
 
 
-class BgServingThread(object):
+class BgServingThread:
     """Runs an RPyC server in the background to serve all requests and replies
     that arrive on the given RPyC connection. The thread is started upon the
     the instantiation of the ``BgServingThread`` object; you can use the
@@ -211,41 +212,91 @@ class BgServingThread(object):
        ``BgServingThread``, see :ref:`tut5`
 
     """
-    # these numbers are magical...
-    SERVE_INTERVAL = 0.0
-    SLEEP_INTERVAL = 0.1
 
-    def __init__(self, conn, callback=None, serve_interval=SERVE_INTERVAL, sleep_interval=SLEEP_INTERVAL):
-        self._conn = conn
-        self._active = True
-        self._callback = callback
-        self._serve_interval = serve_interval
-        self._sleep_interval = sleep_interval
-        self._thread = worker(self._bg_server)
+    __slots__ = ('__conn', '__condition', '__terminate', '__active', '__running', '__callback', '__thread')
+
+    def __init__(self, conn, callback=None):
+        self.__conn = conn
+        self.__terminate = False
+        self.__active = True
+        self.__running = True
+        self.__callback = callback
+        self.__condition = threading.Condition(threading.Lock())
+        self.__thread = worker(self._bg_server)
 
     def __del__(self):
-        if self._active:
-            self.stop()
+        self.stop()
+
+    def _terminate_or_pause(self):
+        return self.__terminate or not self.__active
+
+    def _terminate_or_resume(self):
+        return self.__terminate or self.__active
 
     def _bg_server(self):
-        try:
-            while self._active:
-                self._conn.serve(self._serve_interval)
-                time.sleep(self._sleep_interval)  # to reduce contention
-        except Exception:
-            if self._active:
-                self._active = False
-                if self._callback is None:
+        with self.__condition:
+            try:
+                while not self.__terminate:
+                    if self.__active:
+                        with _UnlockGuard(self.__condition):
+                            self.__conn.serve(timeout=None, predicate=self._terminate_or_pause)
+                    else:
+                        self.__running = False
+                        self.__condition.notify_all()
+                        self.__condition.wait_for(self._terminate_or_resume)
+                        if self.__terminate:
+                            break
+                        self.__running = True
+                        self.__condition.notify_all()
+
+            except BaseException as exc:
+                if self.__callback is None:
                     raise
-                self._callback()
+                self.__callback(exc)
+            finally:
+                self.__terminate = True
+                self.__running = False
+                self.__active = False
+                self.__conn = None
+                self.__condition.notify_all()
+
+    def pause(self):
+        with self.__condition:
+            if not self._terminate_or_pause():
+                self.__active = False
+                self.__condition.notify_all()
+                self.__conn.notify()
+                self.__condition.wait_for(lambda: not self.__running)
+
+    def resume(self):
+        with self.__condition:
+            if self.__terminate:
+                raise RuntimeError(f"already terminated {type(self).__name__}")
+            if not self.__active:
+                self.__condition.wait_for(lambda: not self.__running)
+
+                self.__active = True
+                self.__condition.notify_all()
+                self.__condition.wait_for(lambda: self.__running)
 
     def stop(self):
         """stop the server thread. once stopped, it cannot be resumed. you will
         have to create a new BgServingThread object later."""
-        assert self._active
-        self._active = False
-        self._thread.join()
-        self._conn = None
+
+        with self.__condition:
+            if threading.current_thread() is self.__thread:
+                self.__terminate = True
+                return
+
+            if not self.__terminate:
+                self.__terminate = True
+                self.__condition.notify_all()
+                self.__conn.notify()
+            thread = self.__thread
+            self.__thread = None
+
+        if thread is not None:
+            thread.join()
 
 
 def classpartial(*args, **kwargs):
