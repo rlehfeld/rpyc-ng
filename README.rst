@@ -29,11 +29,11 @@ Documentation can be found at https://rpyc.readthedocs.io
 .. Badges:
 
 .. |Version| image::   https://img.shields.io/pypi/v/rpyc.svg?style=flat
-   :target:            https://pypi.python.org/pypi/rpyc
+   :target:            https://pypi.org/project/rpyc
    :alt:               Version
 
 .. |Python| image::    https://img.shields.io/pypi/pyversions/rpyc.svg?style=flat
-   :target:            https://pypi.python.org/pypi/rpyc#downloads
+   :target:            https://pypi.org/project/rpyc#files
    :alt:               Python Versions
 
 .. |Tests| image::     ../../actions/workflows/python-app.yml/badge.svg
