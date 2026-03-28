@@ -45,7 +45,15 @@ class ClassicMode(unittest.TestCase):
         # are gc'ed, they cry that their fd is already closed. this is all
         # considered harmless, but there's no way to disable that message
         # to stderr
-        server_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin", "rpyc_classic.py")
+        server_file = os.path.join(
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.abspath(__file__)
+                )
+            ),
+            "bin",
+            "rpyc_classic.py"
+        )
         conn = rpyc.classic.connect_subproc(server_file, stderr=PIPE)
         worker = rpyc.worker(splice_to_stderr, conn.proc.stderr)
         try:
