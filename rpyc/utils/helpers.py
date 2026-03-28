@@ -215,10 +215,10 @@ class BgServingThread:
 
     __slots__ = ('__conn', '__condition', '__terminate', '__active', '__running', '__callback', '__thread')
 
-    def __init__(self, conn, callback=None):
+    def __init__(self, conn, callback=None, active=True):
         self.__conn = conn
         self.__terminate = False
-        self.__active = True
+        self.__active = active
         self.__running = True
         self.__callback = callback
         self.__condition = threading.Condition(threading.Lock())
