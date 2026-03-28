@@ -442,9 +442,18 @@ class Connection:
                 raise ValueError(f"invalid message type: {msg!r}")
 
     def notify(self):
+        if self.__bind_threads:
+            self.__notify_bound()
+            return
+
         self.__channel.notify()
         with self.__recv_event:
             self.__recv_event.notify_all()
+
+    def __notify_bound(self):
+        with self._lock:
+            for thread in self._threads.values():
+                thread[1]._condition.notify()
 
     def serve(self, timeout=1, wait_for_lock=True, predicate=None):  # serving
         """Serves a single request or reply that arrives within the given
@@ -456,7 +465,7 @@ class Connection:
         """
         timeout = Timeout(timeout)
         if self.__bind_threads:
-            return self.__serve_bound(timeout, wait_for_lock)
+            return self.__serve_bound(timeout, wait_for_lock, predicate)
 
         def can_receive_or_predicate():
             return not self._receiving or (predicate is not None and predicate())
@@ -487,7 +496,7 @@ class Connection:
             return True
         return False
 
-    def __serve_bound(self, timeout, wait_for_lock):
+    def __serve_bound(self, timeout, wait_for_lock, predicate):
         """Serves messages like `serve` with the added benefit of making request/reply thread bound.
         - Experimental functionality `RPYC_BIND_THREADS`
 
@@ -503,18 +512,18 @@ class Connection:
             with self._lock:
                 this_thread = self.__get_thread()
 
-                def isready():
+                def isready_or_predicate():
                     nonlocal message_available
                     message_available = bool(this_thread._deque)
-                    return message_available or not self._receiving
+                    return message_available or not self._receiving or (predicate is not None and predicate())
 
-                ready = isready()
+                ready = isready_or_predicate()
                 if not ready and wait_for_lock:
                     self._thread_pool.append(this_thread)  # enter pool
-                    ready = this_thread._condition.wait_for(isready, timeout=timeout.timeleft())
+                    ready = this_thread._condition.wait_for(isready_or_predicate, timeout=timeout.timeleft())
                     self._thread_pool.remove(this_thread)  # leave pool
 
-                if not ready:
+                if not ready or (predicate is not None and predicate()):
                     # timeout or not wait_for_lock
                     return False
 
