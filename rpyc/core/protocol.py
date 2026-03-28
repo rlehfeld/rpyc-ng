@@ -442,13 +442,13 @@ class Connection:
                 raise ValueError(f"invalid message type: {msg!r}")
 
     def notify(self):
+        self.__channel.notify()
+
         if self.__bind_threads:
             self.__notify_bound()
-            return
-
-        self.__channel.notify()
-        with self.__recv_event:
-            self.__recv_event.notify_all()
+        else:
+            with self.__recv_event:
+                self.__recv_event.notify_all()
 
     def __notify_bound(self):
         with self._lock:
@@ -540,9 +540,9 @@ class Connection:
                                 return False
 
                             with _UnlockGuard(self._lock):
-                                message = self.__channel.poll(timeout) and self.__channel.recv()
+                                message = self.__channel.poll(timeout, predicate) and self.__channel.recv()
 
-                            if not message:  # timeout; from upstream
+                            if not message:  # timeout or predicate
                                 return False
 
                             remote_thread_id, local_thread_id = brine.I8I8.unpack(message[:16])
