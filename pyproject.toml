@@ -8,8 +8,8 @@ build-backend = "hatchling.build"
 name = "rpyc"
 description = "Remote Python Call (RPyC) is a transparent and symmetric distributed computing library"
 readme = "README.rst"
-license = {text = "MIT License"}
-requires-python = ">=3.8"
+license = {text = "MIT"}
+requires-python = ">=3.10"
 authors = [
     { name = "Tomer Filiba", email = "tomerfiliba@gmail.com" },
     { name = "James Stronz", email = "comrumino@archstrike.org" },
