@@ -61,9 +61,11 @@ class Stream:
                 if not predicate():
                     socket_w.send(b'C')
                     self.__lock.wait_for(predicate)
-                if hasattr(socket, 'SHUT_WR'):
-                    socket_w.shutdown(socket.SHUT_WR)
+                if hasattr(socket, 'SHUT_RDWR'):
+                    socket_w.shutdown(socket.SHUT_RDWR)
                 socket_w.close()
+                if hasattr(socket, 'SHUT_RDWR'):
+                    socket_r.shutdown(socket.SHUT_RDWR)
                 socket_r.close()
 
     @property

@@ -142,16 +142,30 @@ class Server(object):
         if self.logger is not None:
             self.logger.info("listener closed")
         for c in set(self.clients):
-            try:
-                # inform peer that we are finished sending
-                c.shutdown(socket.SHUT_WR)
-                # wait for peer to close it's sending side as well
-                while True:
-                    buf = c.recv(STREAM_CHUNK)
-                    if not buf:
-                        break
-            except Exception:
-                pass
+            if hasattr(socket, 'SHUT_WR'):
+                try:
+                    c.settimeout(5)
+                except Exception:
+                    pass
+                try:
+                    c.shutdown(socket.SHUT_WR)
+                    # inform peer that we are finished sending
+                    # wait for peer to close it's sending side as well
+                    while True:
+                        buf = c.recv(STREAM_CHUNK)
+                        if not buf:
+                            break
+                except Exception:
+                    pass
+                try:
+                    c.settimeout(None)
+                except Exception:
+                    pass
+            if hasattr(socket, 'SHUT_RDWR'):
+                try:
+                    c.shutdown(socket.SHUT_RDWR)
+                except Exception:
+                    pass
             c.close()
         self.clients.clear()
         self._closed = True
