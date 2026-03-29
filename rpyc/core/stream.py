@@ -506,9 +506,11 @@ class PipeStream(Stream):
             reader = self.__reader
             self.__reader = None
             self.__condition.notify_all()
-        incoming.close()
         outgoing.close()
         if reader:
+            reader.join(5)
+        incoming.close()
+        if reader and reader.is_alive():
             reader.join()
         with self.__condition:
             self.__ready = BYTES_LITERAL("")
@@ -653,15 +655,15 @@ class Win32PipeStream(Stream):
         if self.closed:
             return
         try:
-            win32file.CloseHandle(self.incoming)
-        except Exception:
-            pass
-        self.incoming = ClosedFile
-        try:
             win32file.CloseHandle(self.outgoing)
         except Exception:
             pass
         self.outgoing = ClosedFile
+        try:
+            win32file.CloseHandle(self.incoming)
+        except Exception:
+            pass
+        self.incoming = ClosedFile
 
     def read(self, count):
         try:
@@ -811,8 +813,8 @@ class NamedPipeStream(Win32PipeStream):
             win32file.FlushFileBuffers(self.outgoing)
             win32pipe.DisconnectNamedPipe(self.outgoing)
 
-        win32file.CloseHandle(self.read_overlapped.hEvent)
         win32file.CloseHandle(self.write_overlapped.hEvent)
+        win32file.CloseHandle(self.read_overlapped.hEvent)
         Win32PipeStream.close(self)
 
     def read(self, count):
