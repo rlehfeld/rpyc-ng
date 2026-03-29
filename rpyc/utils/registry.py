@@ -232,6 +232,7 @@ class TCPRegistryServer(RegistryServer):
 
         family, socktype, proto, _, sockaddr = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)[0]
         sock = socket.socket(family, socktype, proto)
+        sock.set_inheritable(False)
         if sys.platform == "win32":
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
         if reuse_addr and port != 0:
@@ -257,6 +258,7 @@ class TCPRegistryServer(RegistryServer):
 
     def _recv(self):
         sock2, _ = self.sock.accept()
+        sock2.set_inheritable(False)
         addrinfo = sock2.getpeername()
         data = sock2.recv(MAX_DGRAM_SIZE)
         self._connected_sockets[addrinfo] = sock2

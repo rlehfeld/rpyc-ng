@@ -21,6 +21,20 @@ ssl = safe_import("ssl")
 retry_errnos = (errno.EAGAIN, errno.EWOULDBLOCK)
 
 
+if os.name == 'nt':
+    def get_inheritable(channel):
+        return os.get_handle_inheritable(channel.fileno())
+
+    def set_inheritable(channel, inheritable):
+        os.set_handle_inheritable(channel.fileno(), inheritable)
+else:
+    def get_inheritable(channel):
+        return os.get_inheritable(channel.fileno())
+
+    def set_inheritable(channel, inheritable):
+        os.set_inheritable(channel.fileno(), inheritable)
+
+
 class Stream:
     """Base Stream"""
 
@@ -35,8 +49,8 @@ class Stream:
         self.__predicate = None
 
         self.__socket_w, self.__socket_r = socket.socketpair()
-        self.__socket_w.set_inheritable(False)
         self.__socket_r.set_inheritable(False)
+        self.__socket_w.set_inheritable(False)
         if hasattr(socket, 'SHUT_WR'):
             self.__socket_r.shutdown(socket.SHUT_WR)
         if hasattr(socket, 'SHUT_RD'):
@@ -207,6 +221,7 @@ class SocketStream(Stream):
     MAX_IO_CHUNK = STREAM_CHUNK
 
     def __init__(self, sock):
+        set_inheritable(sock, False)
         self.sock = sock
         super().__init__()
 
@@ -397,7 +412,7 @@ class SocketStream(Stream):
 class TunneledSocketStream(SocketStream):
     """A socket stream over an SSH tunnel (terminates the tunnel when the connection closes)"""
 
-    __slots__ = ("tun",)
+    __slots__ = ("__tun",)
 
     def __init__(self, sock):
         super().__init__(sock)
@@ -408,6 +423,18 @@ class TunneledSocketStream(SocketStream):
         if self.tun:
             self.tun.close()
 
+    @property
+    def tun(self):
+        return self.__tun
+
+    @tun.setter
+    def tun(self, value):
+        if (value is not None and
+                value is not ClosedFile and
+                hasattr(value, 'fileno')):
+            set_inheritable(value, False)
+        self.__tun = value
+
 
 class PipeStream(Stream):
     """A stream over two simplex pipes (one used to input, another for output)"""
@@ -416,6 +443,8 @@ class PipeStream(Stream):
     MAX_IO_CHUNK = STREAM_CHUNK
 
     def __init__(self, incoming, outgoing):
+        set_inheritable(incoming, False)
+        set_inheritable(outgoing, False)
         outgoing.flush()
         self.incoming = incoming
         self.outgoing = outgoing
@@ -586,8 +615,10 @@ class Win32PipeStream(Stream):
         self.__keepalive = (incoming, outgoing)
         if hasattr(incoming, "fileno"):
             self.__fileno = incoming.fileno()
+            set_inheritable(incoming, False)
             incoming = msvcrt.get_osfhandle(incoming.fileno())
         if hasattr(outgoing, "fileno"):
+            set_inheritable(outgoing, False)
             outgoing = msvcrt.get_osfhandle(outgoing.fileno())
         self.incoming = incoming
         self.outgoing = outgoing

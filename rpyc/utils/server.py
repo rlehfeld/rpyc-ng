@@ -75,6 +75,7 @@ class Server(object):
             if hostname is not None or port != 0 or ipv6 is not False:
                 raise ValueError("socket_path is mutually exclusive with: hostname, port, ipv6")
             self.listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.listener.set_inheritable(False)
             self.listener.bind(socket_path)
             # set the self.port to the path as it's used for the registry and logging
             self.host, self.port = "", socket_path
@@ -84,6 +85,7 @@ class Server(object):
             else:
                 family = socket.AF_INET
             self.listener = socket.socket(family, socket.SOCK_STREAM)
+            self.listener.set_inheritable(False)
             address = socket.getaddrinfo(hostname, port, family=family, type=socket.SOCK_STREAM,
                                          proto=socket.IPPROTO_TCP, flags=socket.AI_PASSIVE)[0][-1]
 
