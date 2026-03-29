@@ -615,10 +615,16 @@ class Win32PipeStream(Stream):
         self.__keepalive = (incoming, outgoing)
         if hasattr(incoming, "fileno"):
             self.__fileno = incoming.fileno()
-            set_inheritable(incoming, False)
+            try:
+                set_inheritable(incoming, False)
+            except OSError:
+                pass
             incoming = msvcrt.get_osfhandle(incoming.fileno())
         if hasattr(outgoing, "fileno"):
-            set_inheritable(outgoing, False)
+            try:
+                set_inheritable(outgoing, False)
+            except OSError:
+                pass
             outgoing = msvcrt.get_osfhandle(outgoing.fileno())
         self.incoming = incoming
         self.outgoing = outgoing
