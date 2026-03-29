@@ -358,6 +358,8 @@ class ServerSocketStream(SocketStream):
         super().close()
         with self.__lock:
             server = self.__server
+            if threading.current_thread() is server:
+                return
             self.__server = None
         if server is not None:
             server.join()
