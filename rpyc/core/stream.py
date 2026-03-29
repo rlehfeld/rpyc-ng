@@ -35,6 +35,8 @@ class Stream:
         self.__predicate = None
 
         self.__socket_w, self.__socket_r = socket.socketpair()
+        self.__socket_w.set_inheritable(False)
+        self.__socket_r.set_inheritable(False)
         if hasattr(socket, 'SHUT_WR'):
             self.__socket_r.shutdown(socket.SHUT_WR)
         if hasattr(socket, 'SHUT_RD'):
