@@ -180,7 +180,6 @@ class Connection:
         if self.__bind_threads:
             self._lock = threading.RLock()
             self._threads = {}
-            self._receiving = False
             self._thread_pool = []
             self.__worker_pool = set()
             self.__cleaning_thread = None
@@ -547,8 +546,8 @@ class Connection:
                         return False
                     remote_thread_id, message = top
                 else:
-                    with _ReceivingGuard(self):
-                        while True:
+                    with _ReceivingGuard(self) as receiver:
+                        while receiver:
                             # from upstream
                             if not this_thread.serve:
                                 return False
@@ -1086,6 +1085,9 @@ class _UnlockGuard:
 class _ReceivingGuard:
     def __init__(self, connection):
         self.__connection = connection
+
+    def __bool__(self):
+        return self.__receiver
 
     def __enter__(self):
         self.__connection._lock.acquire()
