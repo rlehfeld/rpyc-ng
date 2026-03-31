@@ -149,6 +149,7 @@ class Connection:
     :param config: the connection's configuration dict (overriding parameters
                    from the :data:`default configuration <DEFAULT_CONFIG>`)
     """
+    __current = threading.local()
 
     def __init__(self, root, channel, config={}):
         self.__closed = True
@@ -375,11 +376,24 @@ class Connection:
             return cls
         return cls.____bind_instance__(self, id_pack)
 
+    @classmethod
+    def current(cls):
+        return getattr(cls.__current, 'connection', None)
+
     def __dispatch_request(self, seq, raw_args):  # dispatch
         try:
             handler, args = raw_args
             args = self.__unbox(args)
-            res = self.__HANDLERS[handler](self, *args)
+            previous = getattr(self.__current, 'connection', None)
+            self.__current.connection = self
+            try:
+                res = self.__HANDLERS[handler](self, *args)
+            finally:
+                if previous is not None:
+                    self.__current.connection = previous
+                else:
+                    self.__current.connection
+
         except BaseException:
             # need to catch old style exceptions too
             t, v, tb = sys.exc_info()

@@ -2,6 +2,7 @@
 Helpers and wrappers for common RPyC tasks
 """
 import threading
+from collections.abc import Callable
 from rpyc.lib import worker
 from rpyc.lib.colls import WeakValueDict
 from rpyc.lib.compat import callable
@@ -213,12 +214,12 @@ class BgServingThread:
 
     """
 
-    __slots__ = ('__conn', '__condition', '__terminate', '__active', '__running', '__callback', '__thread')
+    __slots__ = ('__conn', '__condition', '__terminate', '__depth', '__running', '__callback', '__thread')
 
-    def __init__(self, conn, callback=None, active=True):
+    def __init__(self, conn, callback: Callable[[BaseException], None] | None = None, active: bool = True):
         self.__conn = conn
         self.__terminate = False
-        self.__active = active
+        self.__depth = int(active)
         self.__running = True
         self.__callback = callback
         self.__condition = threading.Condition(threading.Lock())
@@ -228,16 +229,16 @@ class BgServingThread:
         self.stop()
 
     def _terminate_or_pause(self):
-        return self.__terminate or not self.__active
+        return self.__terminate or self.__depth <= 0
 
     def _terminate_or_resume(self):
-        return self.__terminate or self.__active
+        return self.__terminate or self.__depth > 0
 
     def _bg_server(self):
         with self.__condition:
             try:
                 while not self.__terminate:
-                    if self.__active:
+                    if self.__depth > 0:
                         with _UnlockGuard(self.__condition):
                             self.__conn.serve(timeout=None, predicate=self._terminate_or_pause)
                     else:
@@ -256,28 +257,42 @@ class BgServingThread:
             finally:
                 self.__terminate = True
                 self.__running = False
-                self.__active = False
+                self.__depth = 0
                 self.__conn = None
                 self.__condition.notify_all()
 
     def pause(self):
         with self.__condition:
-            if not self._terminate_or_pause():
-                self.__active = False
-                self.__condition.notify_all()
-                self.__conn.notify()
-                self.__condition.wait_for(lambda: not self.__running)
+            if self.__depth > 0:
+                self.__depth -= 1
+
+                if (self.__depth == 0 and
+                        threading.current_thread() is not self.__thread):
+                    self.__condition.notify_all()
+                    self.__conn.notify()
+                    self.__condition.wait_for(lambda: not self.__running)
 
     def resume(self):
         with self.__condition:
             if self.__terminate:
                 raise RuntimeError(f"already terminated {type(self).__name__}")
-            if not self.__active:
+
+            if (self.__depth == 0 and
+                    threading.current_thread() is not self.__thread):
                 self.__condition.wait_for(lambda: not self.__running)
 
-                self.__active = True
+                self.__depth += 1
                 self.__condition.notify_all()
                 self.__condition.wait_for(lambda: self.__running)
+            else:
+                self.__depth += 1
+
+    def __enter__(self):
+        self.resume()
+        return self
+
+    def __exit__(self, exc, typ, tb):
+        self.pause()
 
     def stop(self):
         """stop the server thread. once stopped, it cannot be resumed. you will
