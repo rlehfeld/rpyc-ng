@@ -334,9 +334,9 @@ def _server(server, remote_service, remote_config, args=None):
             is_voidservice = isinstance(remote_service, type) and issubclass(remote_service, VoidService)
             is_voidservice |= not isinstance(remote_service, type) and isinstance(remote_service, VoidService)
             if is_newstyle and not is_voidservice:
-                conn._local_root.exposed_namespace.update(args)
+                conn.local_root.exposed_namespace.update(args)
             elif not is_voidservice:
-                conn._local_root.namespace.update(args)
+                conn.local_root.namespace.update(args)
 
         conn.serve_all()
     except KeyboardInterrupt:

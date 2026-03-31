@@ -800,6 +800,10 @@ class Connection:
             self.__remote_root = self.sync_request(consts.HANDLE_GETROOT)
         return self.__remote_root
 
+    @property
+    def local_root(self):
+        return self.__handle_getroot()
+
     def __check_attr(self, obj, name, perm):  # attribute access
         config = self._config
         if not config[perm]:
