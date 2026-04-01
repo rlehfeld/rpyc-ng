@@ -279,11 +279,17 @@ class BgServingThread:
 
             if (self.__depth == 0 and
                     threading.current_thread() is not self.__thread):
-                self.__condition.wait_for(lambda: not self.__running)
+                self.__condition.wait_for(lambda: self._terminate or not self.__running)
+
+                if self.__terminate:
+                    raise RuntimeError(f"already terminated {type(self).__name__}")
 
                 self.__depth += 1
                 self.__condition.notify_all()
-                self.__condition.wait_for(lambda: self.__running)
+                self.__condition.wait_for(lambda: self._terminate or self.__running)
+
+                if self.__terminate:
+                    raise RuntimeError(f"already terminated {type(self).__name__}")
             else:
                 self.__depth += 1
 
