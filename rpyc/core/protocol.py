@@ -388,10 +388,11 @@ class Connection:
             try:
                 res = self.__HANDLERS[handler](self, *args)
             finally:
-                if previous is not None:
-                    self.__current.connection = previous
+                if previous is None:
+                    del self.__current.connection
                 else:
-                    self.__current.connection
+                    self.__current.connection = previous
+
 
         except BaseException:
             # need to catch old style exceptions too
