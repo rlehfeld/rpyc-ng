@@ -393,7 +393,6 @@ class Connection:
                 else:
                     self.__current.connection = previous
 
-
         except BaseException:
             # need to catch old style exceptions too
             t, v, tb = sys.exc_info()
