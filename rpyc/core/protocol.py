@@ -328,10 +328,9 @@ class Connection:
             return consts.LABEL_TUPLE, tuple(self.__box(item) for item in obj)
         if (isinstance(obj, netref.BaseNetref) or type(obj) is netref.NetrefMetaclass) and obj.____conn__ is self:
             return consts.LABEL_LOCAL_REF, obj.____id_pack__
-        else:
-            id_pack = get_id_pack(obj)
-            self.__local_objects.add(id_pack, obj)
-            return consts.LABEL_REMOTE_REF, id_pack
+        id_pack = get_id_pack(obj)
+        self.__local_objects.add(id_pack, obj)
+        return consts.LABEL_REMOTE_REF, id_pack
 
     def __unbox(self, package):  # boxing
         """recreate a local object representation of the remote object: if the
@@ -360,12 +359,10 @@ class Connection:
         cls_id_pack = (id_pack[1], 0, ObjectType.CLASS.value)
         if cls_id_pack in self.__netref_classes_cache:
             cls = self.__netref_classes_cache[cls_id_pack]
+            if id_pack[1:] == cls_id_pack:
+                return cls
         elif id_pack[1:] != cls_id_pack:
             cls = self.sync_request(consts.HANDLE_TYPE, id_pack)
-            assert cls.____id_pack__[1:] == cls_id_pack, (
-                f"{cls.____id_pack__=!r} != {cls_id_pack=!r}, {id_pack=!r}"
-            )
-            self.__netref_classes_cache[cls_id_pack] = cls
         else:
             # id_pack == cls_id_pack case
             # in the future, it could see if a sys.module cache/lookup hits first
@@ -833,11 +830,11 @@ class Connection:
             name = str(name, "utf8")
         elif type(name) is not str:
             raise TypeError("name must be a string")
-        accessor = getattr(type(obj), overrider, None)
+        accessor = getattr(obj, overrider, None)
         if accessor is None:
-            accessor = default
             name = self.__check_attr(obj, name, param)
-        return accessor(obj, name, *args)
+            return default(obj, name, *args)
+        return accessor(name, *args)
 
     @classmethod
     def __request_handlers(cls):  # request handlers
@@ -889,10 +886,10 @@ class Connection:
 
     def __handle_cmp(self, obj, other, op='__cmp__'):  # request handler
         # cmp() might enter recursive resonance... so use the underlying type and return cmp(obj, other)
-        try:
-            return self.__access_attr(type(obj), op, (), "_rpyc_getattr", "allow_getattr", getattr)(obj, other)
-        except Exception:
-            raise
+        conn = getattr(obj, '____conn__', None)
+        if conn is not None:  # keep unwrapping!
+            return conn.sync_req(consts.HANDLE_CMP, other, op)
+        return self.__access_attr(type(obj), op, (), "_rpyc_getattr", "allow_getattr", getattr)(obj, other)
 
     def __handle_hash(self, obj):  # request handler
         return hash(obj)
@@ -904,22 +901,33 @@ class Connection:
         return tuple(dir(obj))
 
     def __handle_inspect(self, id_pack):  # request handler
-        if hasattr(self.__local_objects[id_pack], '____conn__'):
+        conn = getattr(self.__local_objects[id_pack], '____conn__', None)
+        if conn is not None:  # keep unwrapping!
             # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
             # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
             # see issue #346 or tests.test_rpyc_over_rpyc.Test_rpyc_over_rpyc
-            conn = self.__local_objects[id_pack].____conn__
             return conn.sync_request(consts.HANDLE_INSPECT, id_pack)
-        else:
-            return tuple(get_methods(netref.LOCAL_ATTRS, self.__local_objects[id_pack]))
+        return tuple(get_methods(netref.LOCAL_ATTRS, self.__local_objects[id_pack]))
 
     def __handle_getattr(self, obj, name):  # request handler
+        conn = getattr(obj, '____conn__', None)
+        if conn is not None:  # keep unwrapping!
+            # When RPyC is chained (RPyC over RPyC)
+            return conn.sync_request(consts.HANDLE_GETATTR, obj, name)
         return self.__access_attr(obj, name, (), "_rpyc_getattr", "allow_getattr", getattr)
 
     def __handle_delattr(self, obj, name):  # request handler
+        conn = getattr(obj, '____conn__', None)
+        if conn is not None:  # keep unwrapping!
+            # RPyC is chained (RPyC over RPyC)
+            return conn.sync_request(consts.HANDLE_DELATTR, obj, name)
         return self.__access_attr(obj, name, (), "_rpyc_delattr", "allow_delattr", delattr)
 
     def __handle_setattr(self, obj, name, value):  # request handler
+        conn = getattr(obj, '____conn__', None)
+        if conn is not None:  # keep unwrapping!
+            # RPyC is chained (RPyC over RPyC)
+            return conn.sync_request(consts.HANDLE_SETATTR, obj, name, value)
         return self.__access_attr(obj, name, (value,), "_rpyc_setattr", "allow_setattr", setattr)
 
     def __handle_ctxexit(self, obj, exc):  # request handler
@@ -933,23 +941,22 @@ class Connection:
         return self.__handle_getattr(obj, "__exit__")(exc, typ, tb)
 
     def __handle_type(self, id_pack):  # request handler
-        if hasattr(self.__local_objects[id_pack], '____conn__'):
+        conn = getattr(self.__local_objects[id_pack], '____conn__', None)
+        if conn is not None:  # keep unwrapping!
             # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
             # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
             # see issue #346 or tests.test_rpyc_over_rpyc.Test_rpyc_over_rpyc
-            conn = self.__local_objects[id_pack].____conn__
             return conn.sync_request(consts.HANDLE_TYPE, id_pack)
         else:
             return type(self.__local_objects[id_pack])
 
     def __handle_instancecheck(self, obj, other_id_pack):
-        if hasattr(obj, '____conn__'):  # keep unwrapping!
+        conn = getattr(obj, '____conn__', None)
+        if conn is not None:  # keep unwrapping!
             # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
             # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
             # relates to issue #346 or tests.test_netref_hierachy.Test_Netref_Hierarchy.test_StandardError
-            conn = obj.____conn__
             return conn.sync_request(consts.HANDLE_INSTANCECHECK, obj, other_id_pack)
-
         try:
             other = self.__local_objects[other_id_pack]
         except KeyError:
@@ -970,11 +977,11 @@ class Connection:
         return isinstance(other, obj)
 
     def __handle_subclasscheck(self, obj, other_id_pack):
-        if hasattr(obj, '____conn__'):  # keep unwrapping!
+        conn = getattr(obj, '____conn__', None)
+        if conn is not None:  # keep unwrapping!
             # When RPyC is chained (RPyC over RPyC), id_pack is cached in local objects as a netref
             # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
             # relates to issue #346 or tests.test_netref_hierachy.Test_Netref_Hierarchy.test_StandardError
-            conn = obj.____conn__
             return conn.sync_request(consts.HANDLE_SUBCLASSCHECK, obj, other_id_pack)
 
         try:
