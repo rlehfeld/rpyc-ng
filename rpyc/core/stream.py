@@ -40,10 +40,10 @@ class Stream:
 
     __slots__ = ('__socket_r', '__socket_w',
                  '__predicate',
-                 '__lock', '__polling', '__listening')
+                 '__cond', '__polling', '__listening')
 
     def __init__(self):
-        self.__lock = threading.Condition(threading.Lock())
+        self.__cond = threading.Condition(threading.Lock())
         self.__polling = False
         self.__listening = False
         self.__predicate = None
@@ -68,7 +68,7 @@ class Stream:
         def predicate():
             return not self.__listening
 
-        with self.__lock:
+        with self.__cond:
             socket_w = self.__socket_w
             if socket_w is not None:
                 self.__socket_w = None
@@ -76,7 +76,7 @@ class Stream:
                 self.__socket_r = None
                 if not predicate():
                     socket_w.send(b'C')
-                    self.__lock.wait_for(predicate)
+                    self.__cond.wait_for(predicate)
                 if hasattr(socket, 'SHUT_RDWR'):
                     socket_w.shutdown(socket.SHUT_RDWR)
                 socket_w.close()
@@ -94,7 +94,7 @@ class Stream:
         raise NotImplementedError()
 
     def notify(self):
-        with self.__lock:
+        with self.__cond:
             if (self.__socket_w is not None and
                     self.__predicate is not None and
                     self.__predicate()):
@@ -103,7 +103,7 @@ class Stream:
     def poll(self, timeout, predicate=None):
         """indicates whether the stream has data to read (within *timeout*
         seconds)"""
-        with self.__lock:
+        with self.__cond:
             if self.__polling:
                 return False
             self.__polling = True
@@ -143,9 +143,9 @@ class Stream:
                         p.unregister(wfd)
                         socket_r = None
                         wfd = None
-                        with self.__lock:
+                        with self.__cond:
                             self.__listening = False
-                            self.__lock.notify()
+                            self.__cond.notify()
                     if predicate is not None and predicate():
                         return False
                     continue
@@ -159,11 +159,11 @@ class Stream:
             # let's translate them to select.error
             raise select_error(str(ex))
         finally:
-            with self.__lock:
+            with self.__cond:
                 self.__predicate = None
                 self.__polling = False
                 self.__listening = False
-                self.__lock.notify()
+                self.__cond.notify()
 
     def read(self, count):
         """reads **exactly** *count* bytes, or raise EOFError
@@ -237,9 +237,13 @@ class SocketStream(Stream):
             if keepalive:
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                 # Linux specific: after <keepalive> idle seconds, start sending keepalives every <keepalive> seconds.
-                is_linux_socket = hasattr(socket, "TCP_KEEPIDLE")
-                is_linux_socket &= hasattr(socket, "TCP_KEEPINTVL")
-                is_linux_socket &= hasattr(socket, "TCP_KEEPCNT")
+                is_linux_socket = all(
+                    (
+                        hasattr(socket, "TCP_KEEPIDLE"),
+                        hasattr(socket, "TCP_KEEPINTVL"),
+                        hasattr(socket, "TCP_KEEPCNT"),
+                    )
+                )
                 if is_linux_socket:
                     # Drop connection after 5 failed keepalives
                     # `keepalive` may be a bool or an integer

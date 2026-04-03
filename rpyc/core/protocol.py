@@ -808,10 +808,14 @@ class Connection:
         if not config[perm]:
             raise AttributeError(f"cannot access {name!r}")
         prefix = config["allow_exposed_attrs"] and config["exposed_prefix"]
-        plain = config["allow_all_attrs"]
-        plain |= config["allow_exposed_attrs"] and name.startswith(prefix)
-        plain |= config["allow_safe_attrs"] and name in config["safe_attrs"]
-        plain |= config["allow_public_attrs"] and not name.startswith("_")
+        plain = any(
+            (
+                config["allow_all_attrs"],
+                config["allow_exposed_attrs"] and name.startswith(prefix),
+                config["allow_safe_attrs"] and name in config["safe_attrs"],
+                config["allow_public_attrs"] and not name.startswith("_"),
+            )
+        )
         has_exposed = (
             prefix and not name.startswith(prefix) and
             (hasattr(obj, prefix + name) or hasattr_static(obj, prefix + name))

@@ -329,10 +329,14 @@ def _server(server, remote_service, remote_config, args=None):
 
         if isinstance(args, dict):
             _oldstyle = (MasterService, SlaveService)
-            is_newstyle = isinstance(remote_service, type) and not issubclass(remote_service, _oldstyle)
-            is_newstyle |= not isinstance(remote_service, type) and not isinstance(remote_service, _oldstyle)
-            is_voidservice = isinstance(remote_service, type) and issubclass(remote_service, VoidService)
-            is_voidservice |= not isinstance(remote_service, type) and isinstance(remote_service, VoidService)
+            is_newstyle = (
+                (isinstance(remote_service, type) and not issubclass(remote_service, _oldstyle)) or
+                (not isinstance(remote_service, type) and not isinstance(remote_service, _oldstyle))
+            )
+            is_voidservice = (
+                (isinstance(remote_service, type) and issubclass(remote_service, VoidService)) or
+                (not isinstance(remote_service, type) and isinstance(remote_service, VoidService))
+            )
             if is_newstyle and not is_voidservice:
                 conn.local_root.exposed_namespace.update(args)
             elif not is_voidservice:

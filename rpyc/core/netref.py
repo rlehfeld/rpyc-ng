@@ -207,7 +207,7 @@ class NetrefMetaclass(type):
             base = type
         else:
             base = object
-        if type(self) is NetrefMetaclass and name in ("__name__", ):
+        if base is type and name in ("__name__", ):
             return base.__getattribute__(self, name)
         if name in LOCAL_ATTRS:
             if name == "__class__":
@@ -216,17 +216,20 @@ class NetrefMetaclass(type):
                     cls = self.__getattr__("__class__")
                 return cls
             if name in DELETED_ATTRS:
-                raise AttributeError()
+                raise AttributeError(
+                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                )
             return base.__getattribute__(self, name)
         if name in ("__call__", "__array__"):
             return base.__getattribute__(self, name)
         return syncreq(self, consts.HANDLE_GETATTR, name)
 
     def __getattr__(self, name):
-        if name in DELETED_ATTRS:
-            raise AttributeError()
-        if name != '__class__' and name in LOCAL_ATTRS:
-            raise AttributeError()
+        if name in DELETED_ATTRS or (
+                name != '__class__' and name in LOCAL_ATTRS):
+            raise AttributeError(
+                f'{type(self).__name__!r} object has no attribute {name!r}'
+            )
         return syncreq(self, consts.HANDLE_GETATTR, name)
 
     def __delattr__(self, name):
@@ -284,11 +287,10 @@ class NetrefMetaclass(type):
                 return True
             if self.____id_pack__[2] != 0:
                 raise TypeError("isinstance() arg 2 must be a class, type, or tuple of classes and types")
-            elif self.____id_pack__[1] == other.____id_pack__[1]:
+            if self.____id_pack__[1] == other.____id_pack__[1]:
                 return other.____id_pack__[2] != 0
-            else:
-                # seems dubious if each netref proxies to a different address spaces
-                return syncreq(self, consts.HANDLE_INSTANCECHECK, other.____id_pack__)
+            # seems dubious if each netref proxies to a different address spaces
+            return syncreq(self, consts.HANDLE_INSTANCECHECK, other.____id_pack__)
         if self.____id_pack__ is None:
             return False
         if self.____id_pack__[2] == 0:
@@ -304,11 +306,10 @@ class NetrefMetaclass(type):
                 return True
             if self.____id_pack__[2] != 0:
                 raise TypeError("isinstance() arg 2 must be a class, type, or tuple of classes and types")
-            elif self.____id_pack__[1] == other.____id_pack__[1]:
+            if self.____id_pack__[1] == other.____id_pack__[1]:
                 return other.____id_pack__[2] == 0
-            else:
-                # seems dubious if each netref proxies to a different address spaces
-                return syncreq(self, consts.HANDLE_SUBCLASSCHECK, other.____id_pack__)
+            # seems dubious if each netref proxies to a different address spaces
+            return syncreq(self, consts.HANDLE_SUBCLASSCHECK, other.____id_pack__)
         if self.____id_pack__ is None:
             return False
         if self.____id_pack__[2] == 0:

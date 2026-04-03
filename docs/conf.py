@@ -43,7 +43,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'RPyC'
+project = 'RPyC-NG'
 copyright = f'{time.gmtime().tm_year}, Tomer Filiba, licensed under Attribution-ShareAlike 3.0'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -116,7 +116,7 @@ html_theme_options = {}
 # "<project> v<release> documentation".
 #html_title = "%s v%s Docs" % (project, version)
 #html_title = project
-html_title = "RPyC"
+html_title = "RPyC-NG"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
