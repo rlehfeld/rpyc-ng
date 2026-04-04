@@ -33,7 +33,7 @@ return an ``AsyncResult`` ::
 
 Which means your client can continue working normally, while the server
 performs the request. There are several pitfalls using :func:`async_
-<pyc.utils.helpers.async_>`, be sure to read the Notes_ section!
+<rpyc.utils.helpers.async_>`, be sure to read the Notes_ section!
 
 You can test for completion using ``res.ready``, wait for completion using ``res.wait()``,
 and get the result using ``res.value``. You may set a timeout for the result using
@@ -63,7 +63,7 @@ timed()
 :class:`~rpyc.utils.helpers.timed` allows you to set a timeout for a synchronous invocation.
 When a ``timed`` function is invoked, you'll synchronously wait for the result, but no longer
 than the specified timeout. Should the invocation take longer, a
-:class:`~rpyc.core.async_.AsyncResultTimeout` will be raised.
+:class:`~rpyc.AsyncResultTimeout` will be raised.
 
 Under the hood, ``timed`` is actually implemented with ``async_``: it begins dispatches the
 operation, sets a timeout on the ``AsyncResult``, and waits for the response.

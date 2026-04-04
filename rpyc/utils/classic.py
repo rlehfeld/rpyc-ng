@@ -125,7 +125,7 @@ def ssh_connect(remote_machine, remote_port):
     """Connects to the remote server over an SSH tunnel. See
     :func:`rpyc.utils.factory.ssh_connect` for more info.
 
-    :param remote_machine: the :class:`plumbum.remote.RemoteMachine` instance
+    :param remote_machine: the :class:`plumbum.machines.BaseRemoteMachine` instance
     :param remote_port: the remote TCP port
 
     :returns: an RPyC connection exposing ``SlaveService``

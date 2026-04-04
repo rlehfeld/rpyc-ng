@@ -227,3 +227,5 @@ man_pages = [
     ('index', 'rpyc', u'RPyC Documentation',
      [u'Tomer Filiba'], 1)
 ]
+
+nitpick_ignore = [('py:class', 'collections.abc.Callable')]
