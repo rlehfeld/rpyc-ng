@@ -1,3 +1,9 @@
+7.0.1
+=====
+Date: 2026-04-04
+
+- Fixes a small issue on the PyPi page that the screenshot was not visible
+
 7.0.0
 =====
 Date: 2026-04-04
