@@ -21,7 +21,7 @@ RPyC-NG - Transparent, Symmetric Distributed Computing
    to ask questions report problems. **Please do not email me directly**
 
 .. |release| replace:: Version |version|
-.. _release: https://pypi.python.org/pypi/rpyc/
+.. _release: https://pypi.python.org/pypi/rpyc-ng/
 
 **RPyC** (pronounced as *are-pie-see*), or *Remote Python Call*, is a **transparent**
 `python <https://www.python.org/>`_ library for **symmetrical**

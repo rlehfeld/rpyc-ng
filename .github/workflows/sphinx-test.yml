@@ -25,7 +25,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r docs/requirements.txt
-      - name: Install RPyC
+      - name: Install RPyC-NG
         run: |
           pip install -e .
       - name: Build linkcheck with nit-picky mode

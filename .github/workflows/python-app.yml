@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: RPyC
+name: RPyC-NG
 
 on:
   workflow_dispatch:
@@ -63,7 +63,7 @@ jobs:
           python -m pip install --upgrade pip setuptools flake8
           pip install -r requirements.txt
           pip install -r tests/requirements.txt
-      - name: Install RPyC
+      - name: Install RPyC-NG
         run: |
           pip install -e .
       - name: Init ssh settings on Linux
