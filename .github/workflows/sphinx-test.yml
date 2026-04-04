@@ -1,9 +1,13 @@
 name: "Sphinx Test"
 on:
+  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
+
+permissions:
+  contents: read
 
 jobs:
   docs-linkcheck-nitpicky:
