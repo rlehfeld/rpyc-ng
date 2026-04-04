@@ -21,7 +21,7 @@ Documentation can be found at https://rpyc-ng.readthedocs.io
 
 .. References:
 
-.. _RPyC-NG:                ../..
+.. _RPyC-NG:                https://github.com/rlehfeld/rpyc-ng
 .. _RPyC:                   https://github.com/tomerfiliba-org/rpyc
 .. _remote procedure calls: http://en.wikipedia.org/wiki/Remote_procedure_calls
 .. _clustering:             http://en.wikipedia.org/wiki/Clustering
@@ -39,10 +39,10 @@ Documentation can be found at https://rpyc-ng.readthedocs.io
    :target:            https://pypi.org/project/rpyc-ng#files
    :alt:               Python Versions
 
-.. |Tests| image::     ../../actions/workflows/python-app.yml/badge.svg
-   :target:            ../../actions/workflows/python-app.yml
+.. |Tests| image::     https://github.com/rlehfeld/rpyc-ng/actions/workflows/python-app.yml/badge.svg
+   :target:            https://github.com/rlehfeld/rpyc-ng/actions/workflows/python-app.yml
    :alt:               Build Status
 
 .. |License| image::   https://img.shields.io/pypi/l/rpyc-ng.svg?style=flat
-   :target:            LICENSE
+   :target:            https://github.com/rlehfeld/rpyc-ng/blob/main/LICENSE
    :alt:               License: MIT
