@@ -10,7 +10,7 @@ manipulated as if they were local. It is based on the RPyC_ works from
 
 Documentation can be found at https://rpyc-ng.readthedocs.io
 
-.. figure:: http://rpyc-ng.readthedocs.org/en/latest/_images/screenshot.png
+.. figure:: https://github.com/rlehfeld/rpyc-ng/blob/main/docs/_static/screenshot.png
    :align: center
 
    A screenshot of a Windows client connecting to a Linux server.
