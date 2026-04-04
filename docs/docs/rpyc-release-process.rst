@@ -1,5 +1,5 @@
 RPyC-NG Release Process
-====================
+=======================
 
 A walkthrough of doing a RPyC-NG Release.
 

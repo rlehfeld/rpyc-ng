@@ -10,7 +10,7 @@
 
 
 RPyC-NG - Transparent, Symmetric Distributed Computing
-====================================================
+======================================================
 
 .. admonition:: |release|_ has been released!
    :class: note

@@ -1,7 +1,7 @@
 .. _servers:
 
 RPyC-NG Servers
-============
+===============
 
 Since RPyC-NG is a symmetric protocol (where both client and server can process requests),
 an :ref:`RPyC-NG server <api-server>` is a largely just a main-loop that accepts incoming
@@ -93,7 +93,7 @@ used with conjunction with ``--vdb``.
 .. _custom-servers:
 
 Custom RPyC-NG Servers
--------------------
+----------------------
 Starting an RPyC-NG server that exposes your service is quite easy -- when you construct the
 :class:`rpyc.utils.server.Server` instance, pass it your :class:`rpyc.core.service.Service` factory.
 You can use the following snippet::
