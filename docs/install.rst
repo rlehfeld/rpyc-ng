@@ -26,10 +26,12 @@ platform that runs python (or one of its other implementations), both 32-
 and 64-bit. This is also true for a client and its server, which may run on
 different architectures. The latest release supports:
 
-* **Python** (CPython) 2.7-3.7
-* May work on py2.6
+* **Python** (CPython) 3.10-3.14
+* May work on earlier python 3 versions but not tested.
+* Works on PyPy 3.10 at least
 * May work with **Jython** and **IronPython**. However, these are not primary
   concerns for me. Breakage may occur at any time.
+* Most likely will not work on python 2.7 or earlier.
 
 Cross-Interpreter Compatibility
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -53,7 +55,8 @@ long as you only use types/modules/features supported by both.
    a client machine running RPyC-NG 3.1.0 to a server running RPyC-NG 3.2.0). The
    wire-protocol has seen little changes since the release of RPyC-NG 3.0, but the
    library itself has changed drastically. This might work, but don't count on it.
-
+   This holds especially true for RPyC-NG >= 7.0.0 which has seen also a major behavior
+   change how classes will be remoted.
 Development
 ===========
 

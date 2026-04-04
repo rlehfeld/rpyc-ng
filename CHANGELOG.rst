@@ -1,3 +1,36 @@
+7.0.0
+=====
+Date: 2026-04-04
+
+- This is the first release from RPyC-NG fork. It includes a lot of major rewrites and fixes things I stumbles across when working on a small problem. As a result the unit tests are running much more stable then they used to.
+  On Ubuntu-Linux, the pipeline tests are running completely stable. On Windows there are some problem, which I do not understand as I am not a Windows expert. It looks really strange in some places. Here comes the list of all
+  changes as much as I remember as they were a lot.
+- when using pipes on Linux, the sending side might block when nobody is reading from the other side. This problem might happen when working with a pair of pipes especially where one is used for reading and one is used for writing.
+  It might be, that both ends are at the same time writing. This problem is solved through moving the reading to a separate thread. This change was only implemented for the unix variant as I am not aware if the same problem exists
+  in the windows world
+- I detected that in quite some places threads are spawned and later on "joined". Actually the join will be ignored by python if the thread is a daemon thread. As all threads were spawned via the rpyc.lib.spawn this means no thread
+  was actually joined. I fixed this through adding a new interface called worker which will create non daemon threads and changed the usage at the places were there was a join. Further, I added some more thread cleanups where it was
+  missing. Similar I did with spawn_waitready which was renamed to worker_waitready. All places within the rpyc extensions and the tests should now join with their spawned threads except one situation where we can't. Here we still
+  use a daemon thread for joining with a cleanup thread. But when this situation arises, it means also, that the thread died already.
+- for bind_threads in the _cleanup, it might be that this is called from one of the worker threads from the thread pool. A worker thread cannot join with itself and this causes the cleanup to throw an exception. I fixed this through
+  a detection mechanism that we are in this situation and move the call in this case to a new thread which will not be part of the threadpool. I guess this solves also the original "todo where?" in this location but kept the comment
+  for the moment
+- for bound threads, the _serve_bounds inside protocol included several races leading to messages not being handled or threads not terminating and thus to problems when using join. This problem was visible at least once around every
+  30 - 250 execution. Since I introduced these changes I executed more than 1500 test loops and no more issues were visible.
+- the python version given in the matrix of the github pipeline was not used. I adapted the typo and fixed the test_ssl.py tests accordingly. Further, we are testing now against newer python versions python 3.13 and 3.14.
+- fixed the test_gdb.py tests. Gdb functionality must only be called from python from the main thread as otherwise it can and on my linux sytem will cause crashes of gdb. This could be easily solved by switching to OneShotServer.
+  Apart from that, the teardown in the test included a wrong ordering of calls.
+- fixed a problem with gevent being loaded in tests apart from gevent test through moving the service to a separate process.
+- instead of using shutdown on a socket in RW direction, now we only do a shutdown in W direction and wait for the peer to detect the shutdown and close or using shutdown in it's own W direction. This solves also the problem with
+  test_ssl.py as now the peer can receive the reason of a failed shutdown reliable.
+- when calculating timeout, monotonic time should be used in order to be not affected by time deviations e.g. caused by NTP.
+- as the SSL certificates used for testing expired, I recreated them so that the SSL tests run through again. A proper fix would be to move this into a github pipeline itself so that these certificats are always "fresh" but kept this
+  for a future change. The current certificates are valid for 10 years.
+- there is a race in closing and polling threads which leads to an error. This race is solved as well.
+- classess are now also classes on the peer. Together with the implementation of __subclasscheck__ on __instancecheck__ this makes it possible to execute e.g. issubclass(cls, list) where cls is a remote cls. This fixes problems with
+  isinstance(obj, list) to fail otherwise. This change makes it impossible to use this rpyc-ng version together with rpyc version as they differ on the protocol level.
+- and a lot of other bug fixes which I do not remember ...
+
 6.0.1
 =====
 Date: 2024-09-24
