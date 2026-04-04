@@ -1,3 +1,9 @@
+7.0.2
+=====
+Date: 2026-04-04
+
+- Fixes pipeline when publishing to PyPi
+
 7.0.1
 =====
 Date: 2026-04-04
