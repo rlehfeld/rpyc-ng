@@ -1,15 +1,16 @@
 |Version| |Python| |Tests| |License|
 
-RPyC_ (pronounced like *are-pie-see*), or *Remote Python Call*, is a
+RPyC-NG_ (pronounced like *are-pie-see next generation*), or *Remote Python Call Next Generation*, is a
 **transparent** library for **symmetrical** `remote procedure calls`_,
-clustering_, and distributed-computing_.  RPyC makes use of object-proxying_,
+clustering_, and distributed-computing_.  RPyC-NG makes use of object-proxying_,
 a technique that employs python's dynamic nature, to overcome the physical
 boundaries between processes and computers, so that remote objects can be
-manipulated as if they were local.
+manipulated as if they were local. It is based on the RPyC_ works from
+`Tomer Filiba`_ which does not seem to be maintained any longer.
 
-Documentation can be found at https://rpyc.readthedocs.io
+Documentation can be found at https://rpyc-ng.readthedocs.io
 
-.. figure:: http://rpyc.readthedocs.org/en/latest/_images/screenshot.png
+.. figure:: http://rpyc-ng.readthedocs.org/en/latest/_images/screenshot.png
    :align: center
 
    A screenshot of a Windows client connecting to a Linux server.
@@ -20,26 +21,28 @@ Documentation can be found at https://rpyc.readthedocs.io
 
 .. References:
 
-.. _RPyC:                   ../..
+.. _RPyC-NG:                ../..
+   _RPyC:                   https://github.com/tomerfiliba-org/rpyc
 .. _remote procedure calls: http://en.wikipedia.org/wiki/Remote_procedure_calls
 .. _clustering:             http://en.wikipedia.org/wiki/Clustering
 .. _distributed-computing:  http://en.wikipedia.org/wiki/Distributed_computing
 .. _object-proxying:        http://en.wikipedia.org/wiki/Proxy_pattern
+   _Tomer Filiba:           https://github.com/tomerfiliba
 
 .. Badges:
 
-.. |Version| image::   https://img.shields.io/pypi/v/rpyc.svg?style=flat
-   :target:            https://pypi.org/project/rpyc
+.. |Version| image::   https://img.shields.io/pypi/v/rpyc-ng.svg?style=flat
+   :target:            https://pypi.org/project/rpyc-ng
    :alt:               Version
 
-.. |Python| image::    https://img.shields.io/pypi/pyversions/rpyc.svg?style=flat
-   :target:            https://pypi.org/project/rpyc#files
+.. |Python| image::    https://img.shields.io/pypi/pyversions/rpyc-ng.svg?style=flat
+   :target:            https://pypi.org/project/rpyc-ng#files
    :alt:               Python Versions
 
 .. |Tests| image::     ../../actions/workflows/python-app.yml/badge.svg
    :target:            ../../actions/workflows/python-app.yml
    :alt:               Build Status
 
-.. |License| image::   https://img.shields.io/pypi/l/rpyc.svg?style=flat
+.. |License| image::   https://img.shields.io/pypi/l/rpyc-ng.svg?style=flat
    :target:            LICENSE
    :alt:               License: MIT
