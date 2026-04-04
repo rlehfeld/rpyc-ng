@@ -4,25 +4,53 @@
 name: RPyC
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
+
+permissions:
+  contents: read
 
 jobs:
-  unittest:
+  flake8:
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest" ]
+        python-version: &PYTHON_VERSIONS ["3", "3.10", "3.11", "3.12", "3.13", "3.14"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+	  pip install -U flake8 flake8-polyfill
+          pip install -r requirements.txt
+          pip install -r tests/requirements.txt
+        - name: Lint with flake8
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 --count --show-source --statistics --exclude docs/conf.py -- $(git ls-files '*.py')
+          # exit-zero treats all errors as warnings.
+          flake8 --count --exit-zero --max-complexity=10 --statistics --exclude docs/conf.py -- $(git ls-files '*.py'
 
+  unittest:
     strategy:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest", "windows-latest" ]
-        python-version: ["3", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: *PYTHON_VERSIONS
         rpyc-bind-threads: ["true", "false"]
     runs-on: ${{ matrix.os }}
     name: Unittest (${{ matrix.python-version }}, bind_threads=${{ matrix.rpyc-bind-threads }}, os=${{ matrix.os }})
     steps:
       - uses: actions/checkout@v6
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
@@ -39,13 +67,6 @@ jobs:
       - name: Install RPyC
         run: |
           pip install -e .
-      - name: Lint with flake8
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 --count --show-source --statistics --exclude docs/conf.py -- $(git ls-files '*.py')
-          # exit-zero treats all errors as warnings.
-          flake8 --count --exit-zero --max-complexity=10 --statistics --exclude docs/conf.py -- $(git ls-files '*.py')
       - name: Init ssh settings on Linux
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |

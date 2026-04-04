@@ -836,12 +836,9 @@ class Connection:
             name = self.__check_attr(obj, name, param)
             return default(obj, name, *args)
         if inspect.isclass(obj):
-            try:
-                getter = accessor.__get__
-            except AttributeError:
-                pass
-            else:
-                accessor = getter(obj)
+            getter = getattr(accessor, '__get__', None)
+            if getter is not None:
+                accessor = getter(obj, obj)
         return accessor(name, *args)
 
     @classmethod
