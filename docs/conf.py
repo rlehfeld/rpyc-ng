@@ -228,6 +228,10 @@ man_pages = [
      ['Tomer Filiba', 'René Lehfeld'], 1)
 ]
 
+linkcheck_ignore = [
+    r'https://(?:\w+\.|)sourceforge\.net(?:/.*|)'
+]
+
 nitpick_ignore = [
     ('py:class', 'collections.abc.Callable'),
     ('py:class', 'plumbum.BaseRemoteMachine'),
