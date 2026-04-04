@@ -76,7 +76,7 @@ def restricted(obj, attrs, wattrs=None):
     if wattrs is None:
         wattrs = attrs
     else:
-        wattrs = set(watts)
+        wattrs = set(wattrs)
 
     class Restricted(object):
         __slots__ = ()
