@@ -31,7 +31,7 @@ Documentation can be found at https://rpyc-ng.readthedocs.io
 
 .. Badges:
 
-.. |Version| image::   https://img.shields.io/pypi/v/rpyc-ng.svg?style=flat,v=1.1
+.. |Version| image::   https://img.shields.io/pypi/v/rpyc-ng.svg?style=flat
    :target:            https://pypi.org/project/rpyc-ng
    :alt:               Version
 
