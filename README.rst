@@ -22,12 +22,12 @@ Documentation can be found at https://rpyc-ng.readthedocs.io
 .. References:
 
 .. _RPyC-NG:                ../..
-   _RPyC:                   https://github.com/tomerfiliba-org/rpyc
+.. _RPyC:                   https://github.com/tomerfiliba-org/rpyc
 .. _remote procedure calls: http://en.wikipedia.org/wiki/Remote_procedure_calls
 .. _clustering:             http://en.wikipedia.org/wiki/Clustering
 .. _distributed-computing:  http://en.wikipedia.org/wiki/Distributed_computing
 .. _object-proxying:        http://en.wikipedia.org/wiki/Proxy_pattern
-   _Tomer Filiba:           https://github.com/tomerfiliba
+.. _Tomer Filiba:           https://github.com/tomerfiliba
 
 .. Badges:
 

@@ -15,7 +15,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -38,6 +37,7 @@ dynamic = ["version", "readme"]
 
 [project.urls]
 Homepage = "https://rpyc-ng.readthedocs.org"
+Bug Reports = "https://github.com/rlehfeld/rpyc-ng/issues"
 Source = "https://github.com/rlehfeld/rpyc-ng"
 
 [project.scripts]
