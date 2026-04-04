@@ -51,8 +51,8 @@ copyright = f'{time.gmtime().tm_year}, Tomer Filiba, licensed under Attribution-
 # built documents.
 #
 # The short X.Y version.
-from rpyc.version import __version__, __version_tuple__
-version = '.'.join(__version_tuple__[:3])
+from rpyc.version import __version__
+version = '.'.join(__version__.split('.', 3)[:3])
 # The full version, including alpha/beta/rc tags.
 release = __version__
 
