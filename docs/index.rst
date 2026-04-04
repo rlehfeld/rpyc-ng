@@ -17,7 +17,7 @@ RPyC - Transparent, Symmetric Distributed Computing
 
    Be sure to read the :ref:`changelog <changelog>` before upgrading!
 
-   Please use the `github issues <https://github.com/tomerfiliba/rpyc/issues>`_
+   Please use the `github issues <https://github.com/rlehfeld/rpyc-ng/issues>`_
    to ask questions report problems. **Please do not email me directly**
 
 .. |release| replace:: Version |version|

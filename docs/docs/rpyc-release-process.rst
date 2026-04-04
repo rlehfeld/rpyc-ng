@@ -30,8 +30,8 @@ To create an initial entry draft, run some shell commands.
 
 .. code-block:: bash
 
-    owner="tomerfiliba-org"
-    repo="rpyc"
+    owner="rlehfeld"
+    repo="rpyc-ng"
     #url="https://github.com/${owner}/${repo}"
     revisions="$(git rev-list $(pyenv exec hatch version)..HEAD | sed -z 's/\(.*\)\n/\1/;s/\n/|/g')"
     numbers=( $(git log $(pyenv exec hatch version)..HEAD --no-merges --oneline | sed -nE 's/^.*#([0-9]+).*/\1/p' | sort -nu) )
