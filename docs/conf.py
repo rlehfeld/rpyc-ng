@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# RPyC documentation build configuration file, created by
+# RPyC-NG documentation build configuration file, created by
 # sphinx-quickstart on Sat May 28 10:06:21 2011.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -44,7 +44,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'RPyC-NG'
-copyright = f'{time.gmtime().tm_year}, Tomer Filiba, licensed under Attribution-ShareAlike 3.0'
+copyright = f'{time.gmtime().tm_year}, Tomer Filiba, René Lehfeld, licensed under Attribution-ShareAlike 3.0'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -191,8 +191,8 @@ htmlhelp_basename = 'RPyCdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'RPyC.tex', u'RPyC Documentation',
-     u'Tomer Filiba', 'manual'),
+    ('index', 'RPyC.tex', 'RPyC-NG Documentation',
+     'Tomer Filiba', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -224,8 +224,12 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'rpyc', u'RPyC Documentation',
-     [u'Tomer Filiba'], 1)
+    ('index', 'rpyc', 'RPyC-NG Documentation',
+     ['Tomer Filiba', 'René Lehfeld'], 1)
 ]
 
-nitpick_ignore = [('py:class', 'collections.abc.Callable')]
+nitpick_ignore = [
+    ('py:class', 'collections.abc.Callable'),
+    ('py:class', 'plumbum.BaseRemoteMachine'),
+]
+

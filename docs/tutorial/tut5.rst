@@ -114,6 +114,8 @@ And here's a more interesting snippet::
 
 Events
 ------
+.. autofunction:: os.stat
+
 Combining ``async_`` and callbacks yields a rather interesting result: *async callbacks*,
 also known as **events**. Generally speaking, events are sent by an "event producer" to
 notify an "event consumer" of relevant changes, and this flow is normally one-way

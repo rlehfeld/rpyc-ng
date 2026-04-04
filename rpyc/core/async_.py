@@ -45,7 +45,7 @@ class AsyncResult:
     def wait(self):
         """Waits for the result to arrive. If the AsyncResult object has an
         expiry set, and the result did not arrive within that timeout,
-        an :class:`rpyc.AsyncResultTimeout` exception is raised"""
+        an :exc:`TimeoutError` exception is raised"""
         while not self._predicate():
             # Serve the connection since we are not ready. Suppose
             # the reply for our seq is served. The callback is this class
@@ -104,7 +104,7 @@ class AsyncResult:
     def value(self):
         """Returns the result of the operation. If the result has not yet
         arrived, accessing this property will wait for it. If the result does
-        not arrive before the expiry time elapses, :class:`rpyc.AsyncResultTimeout`
+        not arrive before the expiry time elapses, :exc:`TimeoutError`
         is raised. If the returned result is an exception, it will be raised
         here. Otherwise, the result is returned directly.
         """

@@ -63,7 +63,7 @@ timed()
 :class:`~rpyc.utils.helpers.timed` allows you to set a timeout for a synchronous invocation.
 When a ``timed`` function is invoked, you'll synchronously wait for the result, but no longer
 than the specified timeout. Should the invocation take longer, a
-:class:`~rpyc.AsyncResultTimeout` will be raised.
+:exc:`~TimeoutError` will be raised.
 
 Under the hood, ``timed`` is actually implemented with ``async_``: it begins dispatches the
 operation, sets a timeout on the ``AsyncResult``, and waits for the response.

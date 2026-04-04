@@ -166,7 +166,7 @@ globals()['async'] = async_         # backward compatibility alias
 
 class timed(object):
     """Creates a timed asynchronous proxy. Invoking the timed proxy will
-    run in the background and will raise an :class:`rpyc.AsyncResultTimeout`
+    run in the background and will raise an :exc:`TimeoutError`
     exception if the computation does not terminate within the given time frame
 
     :param proxy: any **callable** RPyC proxy
@@ -178,7 +178,7 @@ class timed(object):
 
         t_sleep = rpyc.timed(conn.modules.time.sleep, 6) # allow up to 6 seconds
         t_sleep(4) # okay
-        t_sleep(8) # will time out and raise AsyncResultTimeout
+        t_sleep(8) # will time out and raise TimeoutError
     """
 
     __slots__ = ("__weakref__", "proxy", "timeout")

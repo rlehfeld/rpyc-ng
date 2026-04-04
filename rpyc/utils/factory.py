@@ -213,7 +213,7 @@ def ssh_connect(remote_machine, remote_port, service=VoidService, config={}):
        so is inherently prone to a race condition with other processes who might bind the
        same port before sshd does. Albeit unlikely, there is no sure way around it.
 
-    :param remote_machine: an :class:`plumbum.machines.BaseRemoteMachine` instance
+    :param remote_machine: an :class:`plumbum.BaseRemoteMachine` instance
     :param remote_port: the port of the remote server
     :param service: the local service to expose (defaults to Void)
     :param config: configuration dict

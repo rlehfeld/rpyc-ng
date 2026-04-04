@@ -179,9 +179,9 @@ def with_metaclass(meta, *bases):
 
 
 if sys.version_info >= (3, 3):
-    TimeoutError = TimeoutError  # noqa: F821
+    from builtins import TimeoutError
 else:
-    class TimeoutError(Exception):  # noqa: F821
+    class TimeoutError(Exception):
         pass
 
 if sys.version_info >= (3, 2):
