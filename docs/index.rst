@@ -41,7 +41,7 @@ they were local.
 
 Getting Started
 ---------------
-:ref:`Installing <install>` RPyC is as easy as ``pip install rpyc``.
+:ref:`Installing <install>` RPyC is as easy as ``pip install rpyc-ng``.
 
 If you're new to RPyC, be sure to check out the :ref:`tutorial`.
 Next, refer to the :ref:`documentation` and :ref:`api-ref`,

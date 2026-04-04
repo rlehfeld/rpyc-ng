@@ -38,7 +38,7 @@ protocols (``telnet``, ``ftp``, ``ssh``, etc.), and most system tools are domain
 extend or compose together. System administration today is a mishmash of technologies.
 
 Why not use python for that? It's a cross-platform, powerful and succinct programming
-language with loads of libraries and great support. All you have to do is ``pip install rpyc``
+language with loads of libraries and great support. All you have to do is ``pip install rpyc-ng``
 on all of your machines, set them up to start an RPyC server on boot (over SSH or SSL),
 and there you go! You can control every machine from a single place, using a unified set
 of tools and libraries.

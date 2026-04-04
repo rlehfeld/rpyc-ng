@@ -8,12 +8,12 @@ You can always download the latest releases of RPyC from the project's
 its `PyPI page <https://pypi.org/project/rpyc/>`_. The easiest way to
 install RPyC, however, is using::
 
-    pip install rpyc
+    pip install rpyc-ng
 
 If you don't want to mess with virtualenvs or mess with system directories,
 install as user::
 
-    pip install rpyc --user
+    pip install rpyc-ng --user
 
 Be sure to read the :ref:`changelog <changelog>` before upgrading versions!
 Also, always link your own applications against a fixed major version of

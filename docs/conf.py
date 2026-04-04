@@ -179,6 +179,10 @@ html_show_sourcelink = False
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'RPyCdoc'
 
+html_context = {
+    "github_user": "rlehfeld", # Username
+    "github_repo": "rpyc-ng", # Repo name
+}
 
 # -- Options for LaTeX output --------------------------------------------------
 
