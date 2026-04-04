@@ -229,7 +229,7 @@ man_pages = [
 ]
 
 linkcheck_ignore = [
-    r'https://(?:\w+\.|)sourceforge\.net(?:/.*|)'
+    r'https?://(?:\w+\.|)sourceforge\.net(?:/.*|)'
 ]
 
 nitpick_ignore = [
