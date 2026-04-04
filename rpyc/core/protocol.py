@@ -1,6 +1,7 @@
 """The RPyC protocol
 """
 import sys
+import inspect
 import itertools
 import socket
 import time  # noqa: F401
@@ -834,6 +835,13 @@ class Connection:
         if accessor is None:
             name = self.__check_attr(obj, name, param)
             return default(obj, name, *args)
+        if inspect.isclass(obj):
+            try:
+                getter = accessor.__get__
+            except AttributeError:
+                pass
+            else:
+                accessor = getter(obj)
         return accessor(name, *args)
 
     @classmethod
@@ -889,7 +897,7 @@ class Connection:
         conn = getattr(obj, '____conn__', None)
         if conn is not None:  # keep unwrapping!
             return conn.sync_req(consts.HANDLE_CMP, other, op)
-        return self.__access_attr(type(obj), op, (), "_rpyc_getattr", "allow_getattr", getattr)(obj, other)
+        return self.__access_attr(obj, op, (), "_rpyc_getattr", "allow_getattr", getattr)(other)
 
     def __handle_hash(self, obj):  # request handler
         return hash(obj)
