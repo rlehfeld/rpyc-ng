@@ -72,10 +72,15 @@ def restricted(obj, attrs, wattrs=None):
                 return rpyc.restricted(f, {"read", "close"})   # disallow access to `seek` or `write`
 
     """
+    attrs = set(attrs)
     if wattrs is None:
         wattrs = attrs
+    else:
+        wattrs = set(watts)
 
     class Restricted(object):
+        __slots__ = ()
+
         def _rpyc_getattr(self, name):
             if name not in attrs:
                 raise AttributeError(name)
