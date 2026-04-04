@@ -3,16 +3,16 @@
 Part 3: Services and *New Style* RPyC
 =====================================
 
-So far we have covered the features of classic RPyC. However, the new model of RPyC
-programming (starting with RPyC 3.00), is based on *services*. As you might have noticed
+So far we have covered the features of classic RPyC-NG. However, the new model of RPyC-NG
+programming (starting with RPyC-NG 3.00), is based on *services*. As you might have noticed
 in the classic mode, the client basically gets full control over the server, which is
-why we (used to) call RPyC servers *slaves*. Luckily, this is no longer the case.
+why we (used to) call RPyC-NG servers *slaves*. Luckily, this is no longer the case.
 The new model is *service oriented*: services provide a way to expose a well-defined set
-of capabilities to the other party, which makes RPyC a generic RPC platform. In fact, the
-*classic RPyC* that you've seen so far, is simply "yet another" service.
+of capabilities to the other party, which makes RPyC-NG a generic RPC platform. In fact, the
+*classic RPyC-NG* that you've seen so far, is simply "yet another" service.
 
 Services are quite simple really. To prove that, the ``SlaveService`` (the service that
-implements classic RPyC) is only 30 lines long, including comments ;). Basically, a service
+implements classic RPyC-NG) is only 30 lines long, including comments ;). Basically, a service
 has the following boilerplate::
 
     import rpyc
@@ -38,7 +38,7 @@ has the following boilerplate::
 
 .. note::
     The ``conn`` argument for ``on_connect`` and ``on_disconnect`` are added
-    in rpyc 4.0. This is backwards incompatible with previous versions where
+    in RPyC-NG 4.0. This is backwards incompatible with previous versions where
     instead the service constructor is called with a connection parameter and
     stores it into ``self._conn``.
 
@@ -116,7 +116,7 @@ instance as their shared root object, e.g.::
 Note the subtle difference (parentheses!) to the example above.
 
 .. note::
-    Passing instances is supported starting with rpyc 4.0. In earlier
+    Passing instances is supported starting with RPyC-NG 4.0. In earlier
     versions, you can only pass a class of which every connection will receive
     a separate instance.
 
@@ -185,7 +185,7 @@ And if you don't care to which you server you connect, you use connect_by_servic
 Decoupled Services
 ------------------
 So far we've discussed only about the service that the **server** exposes, but what about
-the client? Does the client expose a service too? After all, RPyC is a symmetric protocol --
+the client? Does the client expose a service too? After all, RPyC-NG is a symmetric protocol --
 there's no difference between the client and the server. Well, as you might have guessed,
 the answer is yes: both client and server expose services. However, the services exposed
 by the two parties need not be the same -- they are **decoupled**.

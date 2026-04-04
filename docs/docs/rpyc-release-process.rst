@@ -1,7 +1,7 @@
-RPyC Release Process
+RPyC-NG Release Process
 ====================
 
-A walkthrough of doing a RPyC Release.
+A walkthrough of doing a RPyC-NG Release.
 
 1. Ensure a clean and current build environment (i.e., ``git pull; git status``)
 2. Describe commit history within ``CHANGELOG.rst`` (see `Generate Entry`_)

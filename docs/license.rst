@@ -2,7 +2,7 @@
 
 License
 =======
-RPyC is released under the *MIT license*:
+RPyC-NG is released under the *MIT license*:
 
   .. literalinclude:: ../LICENSE
 

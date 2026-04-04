@@ -7,7 +7,7 @@ operations "in the background", i.e., send a batch of work to the server and con
 with your local operation. At some later point, you may want to poll for the completion
 of the work, or perhaps be notified of its completion using a callback function.
 
-RPyC is very well-suited for asynchronous work. In fact, the protocol itself is asynchronous,
+RPyC-NG is very well-suited for asynchronous work. In fact, the protocol itself is asynchronous,
 and synchronicity is layered on top of that -- by issuing an asynchronous request and waiting
 for its completion. However, since the synchronous modus-operandi is the most common one,
 the library exposes a synchronous interface, and you'll need to explicitly enable

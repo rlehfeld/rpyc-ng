@@ -9,7 +9,7 @@
     </div>
 
 
-RPyC - Transparent, Symmetric Distributed Computing
+RPyC-NG - Transparent, Symmetric Distributed Computing
 ====================================================
 
 .. admonition:: |release|_ has been released!
@@ -28,7 +28,7 @@ RPyC - Transparent, Symmetric Distributed Computing
 `remote procedure calls <https://en.wikipedia.org/wiki/Remote_procedure_calls>`_,
 `clustering <https://en.wikipedia.org/wiki/Clustering>`_ and
 `distributed-computing <http://en.wikipedia.org/wiki/Distributed_computing>`_.
-RPyC makes use of `object-proxying <http://en.wikipedia.org/wiki/Proxy_pattern>`_,
+RPyC-NG makes use of `object-proxying <http://en.wikipedia.org/wiki/Proxy_pattern>`_,
 a technique that employs python's dynamic nature, to overcome the physical boundaries
 between processes and computers, so that remote objects can be manipulated as if
 they were local.
@@ -41,7 +41,7 @@ they were local.
 
 Getting Started
 ---------------
-:ref:`Installing <install>` RPyC is as easy as ``pip install rpyc-ng``.
+:ref:`Installing <install>` RPyC-NG is as easy as ``pip install rpyc-ng``.
 
 If you're new to RPyC, be sure to check out the :ref:`tutorial`.
 Next, refer to the :ref:`documentation` and :ref:`api-ref`,
@@ -51,7 +51,7 @@ For an introductory reading (that may or may not be slightly outdated),
 David Mertz wrote a very thorough
 `Charming Python <https://web.archive.org/web/20160928013509/http://www.ibm.com/developerworks/linux/library/l-rpyc/>`_ installment
 about RPyC, explaining how it's different from existing alternatives (Pyro, XMLRPC, etc.),
-what roles it can play, and even show-cases some key features of RPyC (like the security model,
+what roles it can play, and even show-cases some key features of RPyC-NG (like the security model,
 remote monkey-patching, or remote resource utilization).
 
 
@@ -76,7 +76,7 @@ Features
 * **Secure** - employs a `Capability based <https://en.wikipedia.org/wiki/Capability-based_security>`_
   security model; integrates easily with SSH
 
-* **Zero-Deploy Enabled** -- Read more about :ref:`Zero-Deploy RPyC <zerodeploy>`
+* **Zero-Deploy Enabled** -- Read more about :ref:`Zero-Deploy RPyC-NG <zerodeploy>`
 
 * **Integrates** with `TLS/SSL <https://en.wikipedia.org/wiki/Transport_Layer_Security>`_,
   `SSH <https://en.wikipedia.org/wiki/Secure_Shell>`_ and `inetd <https://en.wikipedia.org/wiki/Inetd>`_.

@@ -28,11 +28,11 @@ describe what functions are exposed, define a `serialization <https://en.wikiped
 format, transport abstraction, and a client-side library/code-generator that allows clients
 utilize these remote functions.
 
-RPyC is *yet another RPC*. However, unlike most RPCs, RPyC is **transparent**. This may sound
+RPyC-NG is *yet another RPC*. However, unlike most RPCs, RPyC-NG is **transparent**. This may sound
 like a rather weird virtue at first -- but this is the key to RPyC's power: you can "plug"
-RPyC into existing code at (virtually) no cost. No need to write complicated definition files,
+RPyC-NG into existing code at (virtually) no cost. No need to write complicated definition files,
 configure name servers, set up transport (HTTP) servers, or even use special invocation
-syntax -- RPyC fits the python programming model like a glove. For instance, a function that
+syntax -- RPyC-NG fits the python programming model like a glove. For instance, a function that
 works on a local file object will work seamlessly on a remote file object -- it's
 `duck-typing <https://en.wikipedia.org/wiki/Duck_typing>`_ to the extreme.
 
@@ -45,8 +45,8 @@ Being symmetrical opens the doors to lots of previously unheard-of features, lik
 
 The result of these two properties is that local and remote objects are "equal in front of
 the code": your program shouldn't even be aware of the "proximity" of object it is dealing with.
-In other words, two processes connected by RPyC can be thought of as a **single process**.
-I like to say that RPyC *unifies the address space* of both parties, although physically,
+In other words, two processes connected by RPyC-NG can be thought of as a **single process**.
+I like to say that RPyC-NG *unifies the address space* of both parties, although physically,
 this address space may be split between several computers.
 
 .. note::
@@ -54,24 +54,24 @@ this address space may be split between several computers.
    with new-style RPyC, where services dominate, the analogy is of "unifying selected parts
    of the address space".
 
-In many situations, RPyC is employed in a master-slave relation, where the "client" takes
+In many situations, RPyC-NG is employed in a master-slave relation, where the "client" takes
 full control over the "server". This mainly allows the client to access remote resources
-and perform operations on behalf of the server. However, RPyC can also be used as the basis
+and perform operations on behalf of the server. However, RPyC-NG can also be used as the basis
 for `clustering <https://en.wikipedia.org/wiki/Cluster_(computing)>`_ and
 `distributed computing <https://en.wikipedia.org/wiki/Distributed_computing>`_:
-an array of RPyC servers on multiple machines can form a "huge computer" in terms of
+an array of RPyC-NG servers on multiple machines can form a "huge computer" in terms of
 computation power.
 
 .. note::
    This would require some sort of framework to distribute workload and guarantee
-   task completion. RPyC itself is just the mechanism.
+   task completion. RPyC-NG itself is just the mechanism.
 
 Implementation
 --------------
 
 Boxing
 ^^^^^^
-A major concept in the implementation of RPyC is *boxing*, which is a form of *serialization*
+A major concept in the implementation of RPyC-NG is *boxing*, which is a form of *serialization*
 (encoding) that transfers objects between the two ends of the connection. Boxing relies on two
 methods of serialization:
 
@@ -100,14 +100,14 @@ Any operation performed on the proxy is delivered transparently to the target, s
 code need not be aware of whether the object is local or not.
 
 .. note::
-   RPyC uses the term ``netref`` (network reference) for a proxy object
+   RPyC-NG uses the term ``netref`` (network reference) for a proxy object
 
 Most of the operations performed on object proxies are *synchronous*, meaning the party that
 issued the operation on the proxy waits for the operation to complete. However, sometimes
 you want *asynchronous* mode of operation, especially when invoking remote functions which
 might take a while to return their value. In this mode, you issue the operation and you
 will later be notified of its completion, without having to block until it arrives.
-RPyC supports both methods: proxy operations, are synchronous by default, but invocation
+RPyC-NG supports both methods: proxy operations, are synchronous by default, but invocation
 of remote functions can be made asynchronous by wrapping the proxy with an asynchronous
 wrapper.
 
@@ -118,9 +118,9 @@ both parties had to "fully trust" each other and be "fully cooperative" -- there
 to limit the power of one party over the other. Either party could perform arbitrary
 operations on the other, and there was no way to restrict it.
 
-RPyC 3.0 introduced the concept of *services*. RPyC itself is only a "sophisticated
+RPyC-NG 3.0 introduced the concept of *services*. RPyC-NG itself is only a "sophisticated
 transport layer" -- it is a `mechanism <https://en.wikipedia.org/wiki/Separation_of_mechanism_and_policy>`_,
-it does not set policies. RPyC allows each end of the connection to expose a (potentially
+it does not set policies. RPyC-NG allows each end of the connection to expose a (potentially
 different) *service* that is responsible for the "policy", i.e., the set of supported operations.
 For instance, *classic RPyC* is implemented by the ``SlaveService``, which grants arbitrary
 access to all objects. Users of the library may define their own services, to meet their

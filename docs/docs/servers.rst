@@ -1,11 +1,11 @@
 .. _servers:
 
-RPyC Servers
+RPyC-NG Servers
 ============
 
-Since RPyC is a symmetric protocol (where both client and server can process requests),
-an :ref:`RPyC server <api-server>` is a largely just a main-loop that accepts incoming
-connections and calls :func:`~rpyc.core.protocol.Connection.serve_all`. RPyC comes
+Since RPyC-NG is a symmetric protocol (where both client and server can process requests),
+an :ref:`RPyC-NG server <api-server>` is a largely just a main-loop that accepts incoming
+connections and calls :func:`~rpyc.core.protocol.Connection.serve_all`. RPyC-NG comes
 with three built-in servers:
 
 * Forking - forks a child-process to handle each incoming connection (POSIX only)
@@ -17,7 +17,7 @@ If you wish to implement new servers (say, reactor-based, etc.), you can derive 
 :class:`rpyc.utils.server.Server` and implement ``_accept_method()`` to your own liking.
 
 .. note::
-   RPyC uses the notion of *authenticators* to authenticate incoming connections. An authenticator
+   RPyC-NG uses the notion of *authenticators* to authenticate incoming connections. An authenticator
    object can be passed to the server instance upon construction, and it is used to validate
    incoming connections. See :ref:`api-authenticators` for more info.
 
@@ -26,8 +26,8 @@ If you wish to implement new servers (say, reactor-based, etc.), you can derive 
 
 Classic Server
 --------------
-RPyC comes "bundled" with a :ref:`classic`-mode server -- :file:`rpyc_classic.py`. This executable
-script takes several command-line switches and starts an RPyC server exposing the
+RPyC-NG comes "bundled" with a :ref:`classic`-mode server -- :file:`rpyc_classic.py`. This executable
+script takes several command-line switches and starts an RPyC-NG server exposing the
 ``ClassicService``. It is installed to your python's ``scripts/`` directory, and should be
 executable from the command line. Example usage::
 
@@ -92,9 +92,9 @@ used with conjunction with ``--vdb``.
 
 .. _custom-servers:
 
-Custom RPyC Servers
+Custom RPyC-NG Servers
 -------------------
-Starting an RPyC server that exposes your service is quite easy -- when you construct the
+Starting an RPyC-NG server that exposes your service is quite easy -- when you construct the
 :class:`rpyc.utils.server.Server` instance, pass it your :class:`rpyc.core.service.Service` factory.
 You can use the following snippet::
 
@@ -117,9 +117,9 @@ Refer to :class:`rpyc.utils.server.Server` for the list all possible arguments.
 
 Registry Server
 ---------------
-RPyC comes with a simple command-line registry server, which can be configured quite extensively
+RPyC-NG comes with a simple command-line registry server, which can be configured quite extensively
 by command-line switches. The registry server is a bonjour-like agent, with which services may
-register and clients may perform queries. For instance, if you start an RPyC server that provides
+register and clients may perform queries. For instance, if you start an RPyC-NG server that provides
 service ``Foo`` on ``myhost:17777``, you can register that server with the registry server, which
 would allow clients to later query for the servers that expose that service (and get back a list
 of TCP endpoints). Example usage::

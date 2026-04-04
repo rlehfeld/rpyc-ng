@@ -37,7 +37,7 @@ Unit tests can be ran using your desired Python version as well.
 
 Testing Supported Python Versions via Docker
 --------------------------------------------
-Testing RPyC often requires that you use specific Python versions. Docker will make your life easier when testing RPyC locally, especially when performing packet captures of RPyC communication across Python versions. The current settings will use bind mounts to simplify synchronization of RPyC source code within the containers. So, remember to checkout the commit you desire the containers to use on your host!
+Testing RPyC-NG often requires that you use specific Python versions. Docker will make your life easier when testing RPyC-NG locally, especially when performing packet captures of RPyC-NG communication across Python versions. The current settings will use bind mounts to simplify synchronization of RPyC-NG source code within the containers. So, remember to checkout the commit you desire the containers to use on your host!
 
 If desired, individual containers can be specified started
 

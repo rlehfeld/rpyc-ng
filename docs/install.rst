@@ -3,7 +3,7 @@
 Download and Install
 ====================
 
-You can always download the latest releases of RPyC from the project's
+You can always download the latest releases of RPyC-NG from the project's
 `github page <https://github.com/rlehfeld/rpyc-ng/releases>`_ or
 its `PyPI page <https://pypi.org/project/rpyc-ng/>`_. The easiest way to
 install RPyC, however, is using::
@@ -21,7 +21,7 @@ rpyc!
 
 Platforms and Interpreters
 --------------------------
-RPyC is a pure-python library, and as such can run on any architecture and
+RPyC-NG is a pure-python library, and as such can run on any architecture and
 platform that runs python (or one of its other implementations), both 32-
 and 64-bit. This is also true for a client and its server, which may run on
 different architectures. The latest release supports:
@@ -43,15 +43,15 @@ still account for many bugs in the core interpreter). On top of that,
 many built-in modules and functions were renamed or removed, and many new
 language features were added. These changes render the two major versions
 of Python incompatible with one another, and sadly, this cannot be bridged
-automatically by RPyC at the serialization layer.
+automatically by RPyC-NG at the serialization layer.
 
 Big words aside -- you can connect from **Python 3.x to Python 3.y**, as
 long as you only use types/modules/features supported by both.
 
 .. note::
-   As a side note, do not try to mix different versions of RPyC (e.g., connecting
-   a client machine running RPyC 3.1.0 to a server running RPyC 3.2.0). The
-   wire-protocol has seen little changes since the release of RPyC 3.0, but the
+   As a side note, do not try to mix different versions of RPyC-NG (e.g., connecting
+   a client machine running RPyC-NG 3.1.0 to a server running RPyC-NG 3.2.0). The
+   wire-protocol has seen little changes since the release of RPyC-NG 3.0, but the
    library itself has changed drastically. This might work, but don't count on it.
 
 Development
@@ -67,7 +67,7 @@ Nowadays however, do not count on getting any answers for new questions there.
 
 Repository
 ----------
-RPyC is developed on `github <https://github.com/rlehfeld/rpyc-ng>`_, where you
+RPyC-NG is developed on `github <https://github.com/rlehfeld/rpyc-ng>`_, where you
 can always find the latest code or fork the project.
 
 .. _bugs:
@@ -83,8 +83,8 @@ Patches are accepted through github `pull requests <https://docs.github.com/en/p
 
 Dependencies
 ------------
-The core of RPyC has no external dependencies, so you can use it out of the
-box for "simple" use. However, RPyC integrates with some other projects to
+The core of RPyC-NG has no external dependencies, so you can use it out of the
+box for "simple" use. However, RPyC-NG integrates with some other projects to
 provide more features, and if you wish to use any of those, you must install
 them:
 

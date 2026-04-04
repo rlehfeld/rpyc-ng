@@ -1,12 +1,12 @@
 .. _about:
 
-About RPyC
-==========
-RPyC was inspired by the work of **Eyal Lotem** on
+About RPyC-NG
+=============
+RPyC-NG was inspired by the work of **Eyal Lotem** on
 `pyinvoke <https://pybuild.sourceforge.net/pyinvoke.html>`_, which pioneered in
 the field of "dynamic RPC" (where there's no predefined contract between the
 two sides). The two projects, however, are completely unrelated in any other
-way. RPyC is developed and maintained by `Tomer Filiba <https://tomerfiliba.com/>`_
+way. RPyC-NG is developed and maintained by `Tomer Filiba <https://tomerfiliba.com/>`_
 (tomerfiliba@gmail.com).
 
 .. note::

@@ -3,11 +3,11 @@
 How To's
 ========
 
-This page contains a collection of useful concepts and examples for developing with RPyC
+This page contains a collection of useful concepts and examples for developing with RPyC-NG
 
 Redirecting Standard Input/Output
 ---------------------------------
-You can "rewire" ``stdin``, ``stdout`` and ``stderr`` between RPyC hosts. For example,
+You can "rewire" ``stdin``, ``stdout`` and ``stderr`` between RPyC-NG hosts. For example,
 if you want to "forward" the ``stdout`` of a remote process to your local ``tty``,
 you can use the following receipt::
 
@@ -19,7 +19,7 @@ you can use the following receipt::
     >>> c.execute("print('hi here')")   # now this will be redirected here
     hi here
 
-Also note that if you are using classic mode RPyC, you can use the
+Also note that if you are using classic mode RPyC-NG, you can use the
 `context manager <https://docs.python.org/3/library/stdtypes.html#typecontextmanager>`_
 ``rpyc.classic.redirected_stdio``::
 
@@ -35,7 +35,7 @@ Also note that if you are using classic mode RPyC, you can use the
 .. figure:: _static/howto-redirected.png
    :align: center
 
-   A screenshot of an RPyC client redirecting standard output from the server to
+   A screenshot of an RPyC-NG client redirecting standard output from the server to
    its own console.
 
 Debugging
@@ -93,7 +93,7 @@ Many times, especially in testing environments, you have subnets, VLANs, VPNs, f
 etc., which may prevent you from establishing a direct TCP connection between two
 machines, crossing network  in two different networks. This may be done for security reasons or to simulate
 the environment where your product will be running, but it also hinders your ability to
-conduct tests. However, with RPyC you can overcome this limitation very easily:
+conduct tests. However, with RPyC-NG you can overcome this limitation very easily:
 simply use the remote machine's ``socket`` module!
 
 Consider the following diagram:
@@ -105,7 +105,7 @@ Machine ``A`` belongs to network ``A``, and it wants to connect to machine ``B``
 belongs to network ``B``. Assuming there's a third machine, ``C`` that has access to both
 networks (for instance, it has multiple network cards or it belongs to multiple VLANs),
 you can use it as a transparent bridge between machines ``A`` and ``B`` very easily: simply
-run an RPyC server on machine ``C``, to which machine ``A`` would connect, and use its
+run an RPyC-NG server on machine ``C``, to which machine ``A`` would connect, and use its
 ``socket`` module to connect to machine ``B``. It's really simple::
 
     # this runs on machine `A`

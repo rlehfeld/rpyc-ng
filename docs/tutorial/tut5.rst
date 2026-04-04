@@ -196,7 +196,7 @@ incoming requests). Here's an example of that::
     >>> f.write(b"zloop")  # change the file size 
 
     # Notice that nothing is printed. To print the file change messages,
-    # the RPyC connection must serve requests from filemon that contain stat data.
+    # the RPyC-NG connection must serve requests from filemon that contain stat data.
     # Dispatching a request would implicitly make the connection serve existing requests.
     # Executing conn.poll_all() would explicitly serve all requests, without an extra dispatch.
     >>> conn.poll_all()

@@ -16,14 +16,14 @@ Introduction
    docs/usecases
 
 
-* :ref:`A little about RPyC <about>` - related projects, contributors, and
+* :ref:`A little about RPyC-NG <about>` - related projects, contributors, and
   logo issues
 
 * :ref:`Theory of Operation <theory>` - background on the inner workings of
-  RPyC and the terminology
+  RPyC-NG and the terminology
 
 * :ref:`Use cases <use-cases>` - some common use-cases, demonstrating the power
-  and ease of RPyC
+  and ease of RPyC-NG
 
 * :ref:`How to's <howto>` - solutions to specific problems
 
@@ -47,22 +47,22 @@ Reference
 
 * :ref:`Servers <servers>` - using the built-in servers and writing custom ones
 
-* :ref:`Classic RPyC <classic>` - using RPyC in *slave mode* (AKA *classic
+* :ref:`Classic RPyC-NG <classic>` - using RPyC-NG in *slave mode* (AKA *classic
   mode*), where the client has unrestricted control over the server.
 
-* :ref:`RPyC Services <services>` - writing well-defined services which restrict
+* :ref:`RPyC-NG Services <services>` - writing well-defined services which restrict
   the operations a client (or server) can carry out.
 
 * :ref:`Asynchronous Operation <async>` - invoking operations in the background,
   without having to wait for them to finish.
 
 * :ref:`Security Concerns <security>` - keeping security in mind when using
-  RPyC
+  RPyC-NG
 
 * :ref:`Secure Connections <ssl>` - create an encrypted and authenticated
   connection over SSL or SSH
 
-* :ref:`Zero-Deploy <zerodeploy>` - spawn temporary, short-lived RPyC server on remote
+* :ref:`Zero-Deploy <zerodeploy>` - spawn temporary, short-lived RPyC-NG server on remote
   machine with nothing more than SSH and a Python interpreter
 
 * :ref:`Advanced Debugging <advdebugging>` - debugging at the packet level

@@ -40,9 +40,9 @@ Protocol
    api/core_service
 
 
-* :ref:`api-protocol` - The RPyC protocol (:class:`~rpyc.core.protocol.Connection` class)
+* :ref:`api-protocol` - The RPyC-NG protocol (:class:`~rpyc.core.protocol.Connection` class)
 
-* :ref:`api-service` - The RPyC service model
+* :ref:`api-service` - The RPyC-NG service model
 
 * :ref:`api-netref` - Implementation of transparent object proxies (netrefs)
 
@@ -58,11 +58,11 @@ Server-Side
    api/utils_authenticators
    api/utils_registry
 
-* :ref:`api-server` - The core implementation of RPyC servers; includes the implementation of
+* :ref:`api-server` - The core implementation of RPyC-NG servers; includes the implementation of
   the forking and threaded servers.
 
 * :ref:`api-registry` - Implementation of the Service Registry; the registry is a bonjour-like
-  discovery agent, with which RPyC servers register themselves, and allows clients to locate
+  discovery agent, with which RPyC-NG servers register themselves, and allows clients to locate
   different servers by name.
 
 * :ref:`api-authenticators` - Implementation of two common authenticators, for SSL and TLSlite.
@@ -92,5 +92,5 @@ Misc
 
    api/utils_zerodeploy
 
-* :ref:`api-zerodeploy` - Deploy short-living RPyC servers on remote machines with ease - all you'll
+* :ref:`api-zerodeploy` - Deploy short-living RPyC-NG servers on remote machines with ease - all you'll
   need is SSH access and a Python interpreter installed on the host

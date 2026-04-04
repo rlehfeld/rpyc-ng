@@ -3,7 +3,7 @@
 Services
 ========
 
-RPyC is oriented around the notion of :ref:`services <api-service>`. Services are classes that
+RPyC-NG is oriented around the notion of :ref:`services <api-service>`. Services are classes that
 derive from :class:`rpyc.core.service.Service` and define "exposed methods" -- normally, methods
 whose name explicitly begins with ``exposed_``. Services also have a name, or a list of aliases.
 Normally, the name of the service is the name of its class (excluding a possible ``Service``
@@ -102,7 +102,7 @@ From the client-side perspective, ``on_connect`` is invoked each time a client s
 
 Built-in Services
 -----------------
-RPyC comes bundled with two built-in services:
+RPyC-NG comes bundled with two built-in services:
 
 * :class:`~rpyc.core.service.VoidService`, which is an empty "do-nothing"
   service. It's useful when you want only one side of the connection to provide a service,
@@ -113,7 +113,7 @@ RPyC comes bundled with two built-in services:
 
 Decoupled Services
 ------------------
-RPyC is a symmetric protocol, which means both ends of the connection can act as clients
+RPyC-NG is a symmetric protocol, which means both ends of the connection can act as clients
 or servers -- in other words -- both ends may expose (possibly different) services. Normally,
 only the server exposes a service, while the client exposes the ``VoidService``, but this is
 not constrained in any way. For instance, in the classic mode, both ends expose the

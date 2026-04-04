@@ -4,8 +4,8 @@ Part 1: Introduction to *Classic RPyC*
 ======================================
 
 We'll kick-start the tutorial with what is known as *classic-style* RPyC, i.e., the
-methodology of RPyC 2.60. Since RPyC 3 is a complete redesign of the library, there are some
-minor changes, but if you were familiar with RPyC 2.60, you'll feel right at home. And even
+methodology of RPyC-NG 2.60. Since RPyC-NG 3 is a complete redesign of the library, there are some
+minor changes, but if you were familiar with RPyC-NG 2.60, you'll feel right at home. And even
 if you were not -- we'll make sure you feel at home in a moment ;)
 
 Running a Server

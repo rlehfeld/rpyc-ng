@@ -1,16 +1,16 @@
 .. _zerodeploy:
 
-Zero-Deploy RPyC
-================
+Zero-Deploy RPyC-NG
+===================
 
 Setting up and managing servers is a headache. You need to start the server process, monitor it throughout its
 life span, make sure it doesn't hog up memory over time (or restart it if it does), make sure it comes up
 automatically after reboots, manage user permissions and make sure everything remains secure. Enter zero-deploy.
 
-Zero-deploy RPyC does all of the above, but doesn't stop there: it allows you to dispatch an RPyC server on a machine
-that doesn't have RPyC installed, and even allows multiple instances of the server (each of a different port),
+Zero-deploy RPyC-NG does all of the above, but doesn't stop there: it allows you to dispatch an RPyC-NG server on a machine
+that doesn't have RPyC-NG installed, and even allows multiple instances of the server (each of a different port),
 while keeping it all 100% secure. In fact, because of the numerous benefits of zero-deploy, it is now considered
-the preferred way to deploy RPyC.
+the preferred way to deploy RPyC-NG.
 
 How It Works
 ------------
@@ -19,13 +19,13 @@ Zero-deploy only requires that you have `Plumbum <https://plumbum.readthedocs.io
 your client machine and that you can connect to the remote machine over SSH. It takes care of the rest:
 
 1. Create a temporary directory on the remote machine
-2. Copy the RPyC distribution (from the local machine) to that temp directory
+2. Copy the RPyC-NG distribution (from the local machine) to that temp directory
 3. Create a server file in the temp directory and run it (over SSH)
 4. The server binds to an arbitrary port (call it *port A*) on the ``localhost`` interfaces of the remote
    machine, so it will only accept in-bound connections
 5. The client machine sets up an SSH tunnel from a local port, *port B*, on the ``localhost`` to *port A* on the
    remote machine.
-6. The client machine can now establish secure RPyC connections to the deployed server by connecting to
+6. The client machine can now establish secure RPyC-NG connections to the deployed server by connecting to
    ``localhost``:*port B* (forwarded by SSH)
 7. When the deployment is finalized (or when the SSH connection drops for any reason), the deployed server will
    remove the temporary directory and shut down, leaving no trace on the remote machine
@@ -80,7 +80,7 @@ Here's a capture of the interactive prompt:
     EOFError
 
 You can deploy multiple instances of the server (each will live in a separate temporary directory), and create
-multiple RPyC connections to each. They are completely isolated from each other (up to the fact you can use
+multiple RPyC-NG connections to each. They are completely isolated from each other (up to the fact you can use
 them to run commands like ``ps`` to learn about their neighbors).
 
 MultiServerDeployment
@@ -103,14 +103,14 @@ If you need to deploy on a group of machines a cluster of machines, you can also
 On-Demand Servers
 -----------------
 Zero-deploy is ideal for use-once, on-demand servers. For instance, suppose you need to connect to one of your
-machines periodically or only when a certain event takes place. Keeping an RPyC server up and running at all times
+machines periodically or only when a certain event takes place. Keeping an RPyC-NG server up and running at all times
 is a waste of memory and a potential security hole. Using zero-deploy on demand is the best approach for
 such scenarios.
 
 Security
 --------
-Zero-deploy relies on SSH for security, in two ways. First, SSH authenticates the user and runs the RPyC server
-under the user's permissions. You can connect as an unprivileged user to make sure strayed RPyC processes can't
+Zero-deploy relies on SSH for security, in two ways. First, SSH authenticates the user and runs the RPyC-NG server
+under the user's permissions. You can connect as an unprivileged user to make sure strayed RPyC-NG processes can't
 ``rm -rf /``. Second, it creates an SSH tunnel for the transport, so everything is kept encrypted on the wire.
 And you get these features for free -- just configuring SSH accounts will do.
 

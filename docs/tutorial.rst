@@ -3,7 +3,7 @@
 Tutorial
 ========
 
-Here's a little tutorial to get you started with RPyC in no time:
+Here's a little tutorial to get you started with RPyC-NG in no time:
 
 .. toctree::
    :maxdepth: 1

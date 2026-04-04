@@ -16,7 +16,7 @@ there's no special machinery for it. Surely you've seen callbacks before::
     >>> map(f, range(10))   # f is passed as an argument to map
     [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
-Since in python functions (as well as any other value) are objects, and since RPyC is
+Since in python functions (as well as any other value) are objects, and since RPyC-NG is
 symmetrical, local functions can be passed as arguments to remote objects, and vice versa.
 Here's an example ::
 
@@ -52,14 +52,14 @@ Here's an example ::
     [0, 1, 8, 27, 64, 125, 216, 343, 512, 729]
     >>>
 
-To explain what the symmetry of RPyC means, consider the following diagram:
+To explain what the symmetry of RPyC-NG means, consider the following diagram:
 
 .. figure:: _static/symmetry.png
    :align: center
 
 As you can see, while the client is waiting for the result (a synchronous request),
 it will serve all incoming requests, meaning the server can invoke the callback it had
-received on the client. In other words, the symmetry of RPyC means that both the client and
+received on the client. In other words, the symmetry of RPyC-NG means that both the client and
 the server are ultimately "servers", and the "role" is more semantic than programmatic.
 
 
