@@ -18,16 +18,16 @@ Date: 2026-04-04
 - for bound threads, the _serve_bounds inside protocol included several races leading to messages not being handled or threads not terminating and thus to problems when using join. This problem was visible at least once around every
   30 - 250 execution. Since I introduced these changes I executed more than 1500 test loops and no more issues were visible.
 - the python version given in the matrix of the github pipeline was not used. I adapted the typo and fixed the test_ssl.py tests accordingly. Further, we are testing now against newer python versions python 3.13 and 3.14.
-- fixed the test_gdb.py tests. Gdb functionality must only be called from python from the main thread as otherwise it can and on my linux sytem will cause crashes of gdb. This could be easily solved by switching to OneShotServer.
+- fixed the test_gdb.py tests. Gdb functionality must only be called from python from the main thread as otherwise it can and on my linux system will cause crashes of gdb. This could be easily solved by switching to OneShotServer.
   Apart from that, the teardown in the test included a wrong ordering of calls.
 - fixed a problem with gevent being loaded in tests apart from gevent test through moving the service to a separate process.
 - instead of using shutdown on a socket in RW direction, now we only do a shutdown in W direction and wait for the peer to detect the shutdown and close or using shutdown in it's own W direction. This solves also the problem with
   test_ssl.py as now the peer can receive the reason of a failed shutdown reliable.
 - when calculating timeout, monotonic time should be used in order to be not affected by time deviations e.g. caused by NTP.
-- as the SSL certificates used for testing expired, I recreated them so that the SSL tests run through again. A proper fix would be to move this into a github pipeline itself so that these certificats are always "fresh" but kept this
+- as the SSL certificates used for testing expired, I recreated them so that the SSL tests run through again. A proper fix would be to move this into a github pipeline itself so that these certificates are always "fresh" but kept this
   for a future change. The current certificates are valid for 10 years.
 - there is a race in closing and polling threads which leads to an error. This race is solved as well.
-- classess are now also classes on the peer. Together with the implementation of __subclasscheck__ on __instancecheck__ this makes it possible to execute e.g. issubclass(cls, list) where cls is a remote cls. This fixes problems with
+- classes are now also classes on the peer. Together with the implementation of __subclasscheck__ on __instancecheck__ this makes it possible to execute e.g. issubclass(cls, list) where cls is a remote cls. This fixes problems with
   isinstance(obj, list) to fail otherwise. This change makes it impossible to use this rpyc-ng version together with rpyc version as they differ on the protocol level.
 - and a lot of other bug fixes which I do not remember ...
 
