@@ -57,6 +57,7 @@ long as you only use types/modules/features supported by both.
    library itself has changed drastically. This might work, but don't count on it.
    This holds especially true for RPyC-NG >= 7.0.0 which has seen also a major behavior
    change how classes will be remoted.
+
 Development
 ===========
 
