@@ -13,12 +13,15 @@ def service(cls):
     # any exception other than AttributeError when getattr is called.
     for attr_name, attr_obj in inspect.getmembers(cls):  # rebind exposed decorated attributes
         exposed_prefix = getattr(attr_obj, '__exposed__', False)
-        if exposed_prefix and not inspect.iscode(attr_obj):  # exclude the implementation
+        if (exposed_prefix and
+                not attr_name.startswith(exposed_prefix) and
+                not inspect.iscode(attr_obj)):  # exclude the implementation
             renamed = exposed_prefix + attr_name
             if inspect.isclass(attr_obj):  # recurse exposed objects such as a class
                 attr_obj = service(attr_obj)
-            setattr(cls, attr_name, attr_obj)
-            setattr(cls, renamed, attr_obj)
+                setattr(cls, attr_name, attr_obj)
+            if not hasattr(cls, renamed):
+                setattr(cls, renamed, attr_obj)
     return cls
 
 
