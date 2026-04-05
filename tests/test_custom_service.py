@@ -9,13 +9,8 @@ class MyMeta(type):
         return self.__name__ * 5
 
 
-class MyClass(object):
-    __metaclass__ = MyMeta
-
-
-if not isinstance(MyMeta, MyMeta):
-    # python 3 compatibility
-    MyClass = MyMeta(MyClass.__name__, MyClass.__bases__, dict(MyClass.__dict__))
+class MyClass(metaclass=MyMeta):
+    pass
 
 
 @rpyc.service
@@ -50,7 +45,7 @@ class MyService(rpyc.Service):
     def exposed_instance(self, inst, cls):
         return isinstance(inst, cls)
 
-    @rpyc.exposed
+    @rpyc.service
     class MyClass(object):
         def __init__(self, a, b):
             self.a = a
