@@ -936,13 +936,18 @@ class Connection:
         return self.__access_attr(obj, name, (value,), "_rpyc_setattr", "allow_setattr", setattr)
 
     def __handle_ctxexit(self, obj, exc):  # request handler
-        if exc:
+        conn = getattr(obj, '____conn__', None)
+        if conn is not None:  # keep unwrapping!
+            # RPyC is chained (RPyC over RPyC)
+            return conn.sync_request(consts.HANDLE_CTXEXIT, obj, exc)
+
+        if exc is None:
+            typ = tb = None
+        else:
             try:
                 raise exc
-            except Exception:
+            except BaseException:
                 exc, typ, tb = sys.exc_info()
-        else:
-            typ = tb = None
         return self.__handle_getattr(obj, "__exit__")(exc, typ, tb)
 
     def __handle_type(self, id_pack):  # request handler
@@ -952,8 +957,7 @@ class Connection:
             # since __mro__ is not a safe attribute the request is forwarded using the proxy connection
             # see issue #346 or tests.test_rpyc_over_rpyc.Test_rpyc_over_rpyc
             return conn.sync_request(consts.HANDLE_TYPE, id_pack)
-        else:
-            return type(self.__local_objects[id_pack])
+        return type(self.__local_objects[id_pack])
 
     def __handle_instancecheck(self, obj, other_id_pack):
         conn = getattr(obj, '____conn__', None)
@@ -1017,6 +1021,13 @@ class Connection:
         return tuple(itertools.islice(obj, count))
 
     def __handle_oldslicing(self, obj, attempt, fallback, start, stop, args):  # request handler
+        conn = getattr(obj, '____conn__', None)
+        if conn is not None:  # keep unwrapping!
+            # When RPyC is chained (RPyC over RPyC)
+            return conn.sync_request(
+                consts.HANDLE_OLDSLICING, obj, attempt, fallback, start, stop, args
+            )
+
         try:
             # first try __xxxitem__
             getitem = self.__handle_getattr(obj, attempt)
