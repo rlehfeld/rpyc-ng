@@ -35,7 +35,7 @@ Documentation can be found at https://rpyc-ng.readthedocs.io
    :target:            https://pypi.org/project/rpyc-ng
    :alt:               Version
 
-.. |Python| image::    https://img.shields.io/pypi/pyversions/rpyc-ng.svg?style=flat,v=1.1
+.. |Python| image::    https://img.shields.io/pypi/pyversions/rpyc-ng.svg?style=flat
    :target:            https://pypi.org/project/rpyc-ng#files
    :alt:               Python Versions
 
@@ -43,6 +43,6 @@ Documentation can be found at https://rpyc-ng.readthedocs.io
    :target:            https://github.com/rlehfeld/rpyc-ng/actions/workflows/python-app.yml
    :alt:               Build Status
 
-.. |License| image::   https://img.shields.io/pypi/l/rpyc-ng.svg?style=flat,v=1.1
+.. |License| image::   https://img.shields.io/pypi/l/rpyc-ng.svg?style=flat
    :target:            https://github.com/rlehfeld/rpyc-ng/blob/main/LICENSE
    :alt:               License: MIT
