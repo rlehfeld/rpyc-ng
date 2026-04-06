@@ -2,8 +2,8 @@
 =====
 Date: 2026-04-06
 
-  Fixes https://github.com/tomerfiliba-org/rpyc/issues/564
-  Fixes https://github.com/tomerfiliba-org/rpyc/issues/566
+- Fixes https://github.com/tomerfiliba-org/rpyc/issues/564
+- Fixes https://github.com/tomerfiliba-org/rpyc/issues/566
 
 7.0.2
 =====
