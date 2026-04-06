@@ -16,8 +16,8 @@ class MyMeta(type):
         return self.__name__ * 5
 
 
-class MyClass(object):
-    __metaclass__ = MyMeta
+class MyClass(metaclass=MyMeta):
+    pass
 
 
 class MyService(rpyc.Service):
