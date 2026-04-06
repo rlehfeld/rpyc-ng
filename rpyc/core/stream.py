@@ -222,6 +222,9 @@ class SocketStream(Stream):
 
     def __init__(self, sock):
         set_inheritable(sock, False)
+        sendbufsize = sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+        if sendbufsize < 40 * self.MAX_IO_CHUNK:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 40 * self.MAX_IO_CHUNK)
         self.sock = sock
         super().__init__()
 

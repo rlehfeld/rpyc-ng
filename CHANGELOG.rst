@@ -1,3 +1,9 @@
+7.0.4
+=====
+Date: unreleased
+
+- Fixes: https://github.com/tomerfiliba-org/rpyc/issues/554
+
 7.0.3
 =====
 Date: 2026-04-06
