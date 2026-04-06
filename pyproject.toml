@@ -4,9 +4,9 @@ requires = ['setuptools>=45', 'setuptools_scm[toml]>=6.2']
 [project]
 name = "rpyc-ng"
 authors = [
+    { name = 'René Lehfeld', email = "5ipdjfnlt@mozmail.com" },
     { name = "Tomer Filiba", email = "tomerfiliba@gmail.com" },
     { name = "James Stronz", email = "comrumino@archstrike.org" },
-    { name = 'René Lehfeld', email = "54720674+rlehfeld@users.noreply.github.com" },
 ]
 description = "Remote Python Call Next Generation (RPyC-NG) is a transparent and symmetric distributed computing library"
 requires-python = ">=3.10"
