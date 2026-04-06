@@ -273,8 +273,12 @@ class NetrefMetaclass(type):
     def __bool__(self):
         return syncreq(self, consts.HANDLE_BOOL)
 
-    def __exit__(self, exc, typ, tb):
-        return syncreq(self, consts.HANDLE_CTXEXIT, exc)  # can't pass type nor traceback
+    def __exit__(self, typ, exc, tb):
+        if exc is None:
+            boxed_exc = None
+        else:
+            boxed_exc = self.____conn__._box_exc(typ, exc, tb)
+        return syncreq(self, consts.HANDLE_CTXEXIT, boxed_exc)
 
     def __reduce_ex__(self, proto):
         # support for pickling netrefs

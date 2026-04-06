@@ -402,16 +402,16 @@ class Connection:
                 raise
             if t is KeyboardInterrupt and self._config["propagate_KeyboardInterrupt_locally"]:
                 raise
-            self.__send(consts.MSG_EXCEPTION, seq, self.__box_exc(t, v, tb))
+            self.__send(consts.MSG_EXCEPTION, seq, self._box_exc(t, v, tb))
         else:
             self.__send(consts.MSG_REPLY, seq, self.__box(res))
 
-    def __box_exc(self, typ, val, tb):  # dispatch?
+    def _box_exc(self, typ, val, tb):  # dispatch?
         return vinegar.dump(typ, val, tb,
                             include_local_traceback=self._config["include_local_traceback"],
                             include_local_version=self._config["include_local_version"])
 
-    def __unbox_exc(self, raw):  # dispatch?
+    def _unbox_exc(self, raw):  # dispatch?
         return vinegar.load(raw,
                             import_custom_exceptions=self._config["import_custom_exceptions"],
                             instantiate_custom_exceptions=self._config["instantiate_custom_exceptions"],
@@ -446,7 +446,7 @@ class Connection:
                 self.notify()
             elif msg == consts.MSG_EXCEPTION:
                 seq, args = brine.load(data[1:])
-                obj = self.__unbox_exc(args)
+                obj = self._unbox_exc(args)
                 self.__seq_request_callback(msg, seq, True, obj)
                 self.notify()
             else:
@@ -935,20 +935,21 @@ class Connection:
             return conn.sync_request(consts.HANDLE_SETATTR, obj, name, value)
         return self.__access_attr(obj, name, (value,), "_rpyc_setattr", "allow_setattr", setattr)
 
-    def __handle_ctxexit(self, obj, exc):  # request handler
+    def __handle_ctxexit(self, obj, rawexc):  # request handler
         conn = getattr(obj, '____conn__', None)
         if conn is not None:  # keep unwrapping!
             # RPyC is chained (RPyC over RPyC)
-            return conn.sync_request(consts.HANDLE_CTXEXIT, obj, exc)
+            return conn.sync_request(consts.HANDLE_CTXEXIT, obj, rawexc)
 
-        if exc is None:
-            typ = tb = None
+        if rawexc is None:
+            typ = exc = tb = None
         else:
+            exc = self._unbox_exc(rawexc)
             try:
                 raise exc
             except BaseException:
-                exc, typ, tb = sys.exc_info()
-        return self.__handle_getattr(obj, "__exit__")(exc, typ, tb)
+                typ, exc, tb = sys.exc_info()
+        return self.__handle_getattr(obj, "__exit__")(typ, exc, tb)
 
     def __handle_type(self, id_pack):  # request handler
         conn = getattr(self.__local_objects[id_pack], '____conn__', None)
