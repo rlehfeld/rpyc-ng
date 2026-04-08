@@ -1,3 +1,10 @@
+7.0.5
+=====
+Date: 2026-04-08
+
+- under Python on Posix and Windows systems, signals can interrupt the Lock Acquiring. This is not handled in Condition Variables though under python. Implement a work around for this.
+  Reentrant Locks should be also affected but work around is here work difficult.
+
 7.0.4
 =====
 Date: 2026-04-06
