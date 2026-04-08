@@ -212,24 +212,16 @@ if sys.version_info >= (3, 2):
                 return True
             return self._lock.acquire(blocking, timeout)
 
-        acquire.__doc__ = threading.Lock.acquire.__doc__
-
         def release(self):
             return self._lock.release()
 
-        release.__doc__ = threading.Lock.release.__doc__
-
         def locked(self):
             return self._lock.locked()
-
-        locked.__doc__ = threading.Lock.locked.__doc__
 
         __enter__ = acquire
 
         def __exit__(self, exc_type, exc_value, traceback):
             return self._lock.__exit__(exc_type, exc_value, traceback)
-
-    Lock.__doc__ = threading.Lock.__doc__
 
 else:
     Lock = threading.Lock
