@@ -12,9 +12,9 @@ import os
 import threading
 
 from weakref import ref
-from threading import Lock, Condition
+from threading import Condition
 from rpyc.lib import worker, spawn, Timeout, get_methods, get_id_pack, hasattr_static, ObjectType
-from rpyc.lib.compat import pickle, next, maxint, select_error, acquire_lock  # noqa: F401
+from rpyc.lib.compat import pickle, next, Lock, maxint, select_error, acquire_lock  # noqa: F401
 from rpyc.lib.colls import WeakValueDict, RefCountingColl
 from rpyc.core import consts, brine, vinegar, netref
 from rpyc.core.async_ import AsyncResult
@@ -1107,7 +1107,8 @@ class _UnlockGuard:
     def __exit__(self, t, v, tb):
         depth = self.__depth.pop(0)
         for _ in range(depth):
-            self.__lock.acquire()
+            while not self.__lock.acquire():
+                pass
 
 
 class _ReceivingGuard:
@@ -1118,7 +1119,8 @@ class _ReceivingGuard:
         return self.__receiver
 
     def __enter__(self):
-        self.__connection._lock.acquire()
+        while not self.__connection._lock.acquire():
+            pass
         self.__receiver = not self.__connection._receiving
         if self.__receiver:
             self.__connection._receiving = True

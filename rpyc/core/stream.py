@@ -8,7 +8,7 @@ import socket
 import errno
 import threading
 from rpyc.lib import safe_import, Timeout, worker, socket_backoff_connect
-from rpyc.lib.compat import poll, select_error, BYTES_LITERAL, get_exc_errno, maxint  # noqa: F401
+from rpyc.lib.compat import poll, Lock, select_error, BYTES_LITERAL, get_exc_errno, maxint  # noqa: F401
 from rpyc.core.consts import STREAM_CHUNK
 win32file = safe_import("win32file")
 win32pipe = safe_import("win32pipe")
@@ -43,7 +43,7 @@ class Stream:
                  '__cond', '__polling', '__listening')
 
     def __init__(self):
-        self.__cond = threading.Condition(threading.Lock())
+        self.__cond = threading.Condition(Lock())
         self.__polling = False
         self.__listening = False
         self.__predicate = None
@@ -460,7 +460,7 @@ class PipeStream(Stream):
         outgoing.flush()
         self.incoming = incoming
         self.outgoing = outgoing
-        self.__condition = threading.Condition(threading.Lock())
+        self.__condition = threading.Condition(Lock())
         self.__ready = BYTES_LITERAL("")
         self.__reader = worker(self.__readthread, incoming)
 

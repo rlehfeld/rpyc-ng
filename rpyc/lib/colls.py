@@ -1,6 +1,6 @@
 from __future__ import with_statement
 import weakref
-from threading import Lock
+from rpyc.lib.compat import Lock
 
 
 class WeakValueDict(object):

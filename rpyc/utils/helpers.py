@@ -5,7 +5,7 @@ import threading
 from collections.abc import Callable
 from rpyc.lib import worker
 from rpyc.lib.colls import WeakValueDict
-from rpyc.lib.compat import callable
+from rpyc.lib.compat import callable, Lock
 from rpyc.core.protocol import _UnlockGuard
 from rpyc.core.consts import HANDLE_BUFFITER, HANDLE_CALL
 from rpyc.core.netref import syncreq, asyncreq
@@ -227,7 +227,7 @@ class BgServingThread:
         self.__depth = int(active)
         self.__running = True
         self.__callback = callback
-        self.__condition = threading.Condition(threading.Lock())
+        self.__condition = threading.Condition(Lock())
         self.__thread = worker(self._bg_server)
 
     def __del__(self):
