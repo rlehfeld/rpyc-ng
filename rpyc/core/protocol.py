@@ -179,7 +179,7 @@ class Connection:
         self.__bind_threads = self._config['bind_threads']
         self._threads = None
         if self.__bind_threads:
-            self._lock = threading.RLock()
+            self._lock = Lock()
             self._threads = {}
             self._thread_pool = []
             self.__worker_pool = set()
@@ -609,20 +609,22 @@ class Connection:
 
         :returns: None
         """
-        thread = self.__get_thread()
+        with self._lock:
+            thread = self.__get_thread()
 
-        # from upstream
-        try:
-            while thread.loop:
-                self.serve(None)
+            # from upstream
+            try:
+                while thread.loop:
+                    with _UnlockGuard(self._lock):
+                        self.serve(None)
 
-        except (socket.error, select_error, IOError):
-            if not self.closed:
-                raise
-        except EOFError:
-            pass
-        finally:
-            thread.serve = False
+            except (socket.error, select_error, IOError):
+                if not self.closed:
+                    raise
+            except EOFError:
+                pass
+            finally:
+                thread.serve = False
 
     @staticmethod
     def __is_thread_alive(thd):
@@ -658,27 +660,26 @@ class Connection:
                 "create only supported for current thread or when thread object is given"
             )
 
-        with self._lock:
-            rthd, thread = self._threads.get(tid, (None, None))
-            if rthd is not None:
-                thd = rthd()
-                if thd is None or not self.__is_thread_alive(thd):
-                    del rthd
-                    self._threads.pop(tid)
-                    thread = None
-            if thread is None and create:
-                rconnection = ref(self)
+        rthd, thread = self._threads.get(tid, (None, None))
+        if rthd is not None:
+            thd = rthd()
+            if thd is None or not self.__is_thread_alive(thd):
+                del rthd
+                self._threads.pop(tid)
+                thread = None
+        if thread is None and create:
+            rconnection = ref(self)
 
-                def thread_deleted(_, tid=cid, rconnection=rconnection):
-                    connection = rconnection()
-                    if connection is not None:
-                        with connection._lock:
-                            connection._threads.pop(tid)
+            def thread_deleted(_, tid=cid, rconnection=rconnection):
+                connection = rconnection()
+                if connection is not None:
+                    with connection._lock:
+                        connection._threads.pop(tid)
 
-                thd = cthid
-                rthd = ref(thd, thread_deleted)
-                thread = _Thread(cid, self._lock)
-                self._threads[cid] = rthd, thread
+            thd = cthid
+            rthd = ref(thd, thread_deleted)
+            thread = _Thread(cid, self._lock)
+            self._threads[cid] = rthd, thread
 
         return thread
 
@@ -758,7 +759,6 @@ class Connection:
         timeout = self._config["sync_request_timeout"]
         _async_res = self.async_request(handler, *args, timeout=timeout)
         # _async_res is an instance of AsyncResult, the value property invokes Connection.serve via AsyncResult.wait
-        # So, the _recvlock can be acquired multiple times by the owning thread and warrants the use of RLock
         return _async_res.value
 
     def __async_request(self, handler, args=(), callback=(lambda a, b: None)):  # serving
@@ -1057,58 +1057,62 @@ class _Thread:
 
     @property
     def serve(self):
-        with self._condition:
-            return self.__serve
+        return self.__serve
 
     @property
     def loop(self):
-        with self._condition:
-            return self.__serve or bool(self._deque)
+        return self.__serve or bool(self._deque)
 
     @serve.setter
     def serve(self, value):
-        with self._condition:
-            if value is False and self.__serve is True:
-                self.__serve = False
-                self._deque.append(None)
-                self._condition.notify()
+        if value is False and self.__serve is True:
+            self.__serve = False
+            self._deque.append(None)
+            self._condition.notify()
 
     def decr(self):
-        with self._condition:
-            if self._occupation_count <= 1:
-                self._occupation_count = 0
-                self._remote_thread_id = UNBOUND_THREAD_ID
-            else:
-                self._occupation_count -= 1
+        if self._occupation_count <= 1:
+            self._occupation_count = 0
+            self._remote_thread_id = UNBOUND_THREAD_ID
+        else:
+            self._occupation_count -= 1
 
     def incr(self):
         self._occupation_count += 1
 
 
 class _UnlockGuard:
-    __slots__ = ('__lock', '__depth')
 
     def __init__(self, lock):
-        self.__lock = lock
-        self.__depth = []
+        self._lock = lock
+        self.__local = threading.local()
+        if hasattr(lock, '_release_save'):
+            self._release_save = lock._release_save
+        if hasattr(lock, '_acquire_restore'):
+            self._acquire_restore = lock._acquire_restore
+        if hasattr(lock, '_is_owned'):
+            self._is_owned = lock._is_owned
 
     def __enter__(self):
-        depth = 0
-        while True:
-            try:
-                self.__lock.release()
-            except RuntimeError:
-                break
-            else:
-                depth += 1
-        self.__depth.append(depth)
+        if not self._is_owned():
+            raise RuntimeError("cannot release an un-acquired lock")
+
+        states = getattr(self.__local, 'states', [])
+        states.append(self._release_save())
+        self.__local.states = states
         return self
 
     def __exit__(self, t, v, tb):
-        depth = self.__depth.pop(0)
-        for _ in range(depth):
-            while not self.__lock.acquire():
-                pass
+        states = self.__local.states
+        self._acquire_restore(states.pop())
+        if states:
+            self.__local.states = states
+        else:
+            del self.__local.states
+
+    _release_save = Condition._release_save
+    _acquire_restore = Condition._acquire_restore
+    _is_owned = Condition._is_owned
 
 
 class _ReceivingGuard:
@@ -1119,8 +1123,6 @@ class _ReceivingGuard:
         return self.__receiver
 
     def __enter__(self):
-        while not self.__connection._lock.acquire():
-            pass
         self.__receiver = not self.__connection._receiving
         if self.__receiver:
             self.__connection._receiving = True
@@ -1133,4 +1135,3 @@ class _ReceivingGuard:
                 if not thread._deque:
                     thread._condition.notify()
                     break
-        self.__connection._lock.release()

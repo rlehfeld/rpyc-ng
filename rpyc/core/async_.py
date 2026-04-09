@@ -110,6 +110,6 @@ class AsyncResult:
         """
         self.wait()
         if self._is_exc:
-            raise self._obj
+            raise self._obj from None
         else:
             return self._obj
