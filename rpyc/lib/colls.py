@@ -1,6 +1,6 @@
 from __future__ import with_statement
 import weakref
-from rpyc.lib.compat import Lock
+import threading
 
 
 class WeakValueDict(object):
@@ -76,7 +76,7 @@ class RefCountingColl(object):
     __slots__ = ("_lock", "_dict")
 
     def __init__(self):
-        self._lock = Lock()
+        self._lock = threading.Lock()
         self._dict = {}
 
     def __repr__(self):

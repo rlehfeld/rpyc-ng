@@ -4,7 +4,6 @@ and various platforms (posix/windows)
 """
 import sys
 import time
-import threading
 
 is_py_3k = (sys.version_info[0] >= 3)
 is_py_gte311 = is_py_3k and (sys.version_info[1] >= 11)
@@ -184,44 +183,3 @@ if sys.version_info >= (3, 3):
 else:
     class TimeoutError(Exception):
         pass
-
-if sys.version_info >= (3, 2):
-    def acquire_lock(lock, blocking, timeout):
-        if blocking and timeout.finite:
-            return lock.acquire(blocking, timeout.timeleft())
-        if blocking:
-            while not lock.acquire():
-                pass
-            return True
-        return lock.acquire(False)
-else:
-    def acquire_lock(lock, blocking, timeout):
-        return lock.acquire(blocking)
-
-if sys.version_info >= (3, 2):
-    class Lock:
-        __slots__ = ('_lock', )
-
-        def __init__(self):
-            self._lock = threading.Lock()
-
-        def acquire(self, blocking=True, timeout=-1):
-            if blocking and timeout < 0:
-                while not self._lock.acquire():
-                    pass
-                return True
-            return self._lock.acquire(blocking, timeout)
-
-        def release(self):
-            return self._lock.release()
-
-        def locked(self):
-            return self._lock.locked()
-
-        __enter__ = acquire
-
-        def __exit__(self, exc_type, exc_value, traceback):
-            return self._lock.__exit__(exc_type, exc_value, traceback)
-
-else:
-    Lock = threading.Lock

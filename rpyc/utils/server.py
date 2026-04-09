@@ -17,7 +17,7 @@ from rpyc.core.consts import STREAM_CHUNK
 from rpyc.utils.registry import UDPRegistryClient
 from rpyc.utils.authenticators import AuthenticationError
 from rpyc.lib import safe_import, worker, worker_waitready
-from rpyc.lib.compat import Lock, poll, get_exc_errno
+from rpyc.lib.compat import poll, get_exc_errno
 signal = safe_import("signal")
 gevent = safe_import("gevent")
 
@@ -354,7 +354,7 @@ class ThreadedServer(Server):
     """
 
     def __init__(self, *args, **kwargs):
-        self._cond = threading.Condition(Lock())
+        self._cond = threading.Condition(threading.Lock())
         self._workers = set()
         self._terminated = set()
         super().__init__(*args, **kwargs)

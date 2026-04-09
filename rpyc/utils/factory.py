@@ -6,7 +6,6 @@ from __future__ import with_statement
 import socket
 from contextlib import closing
 from functools import partial
-from rpyc.lib.compat import Lock
 import threading
 try:
     from thread import interrupt_main
@@ -200,7 +199,7 @@ def _get_free_port():
         return s.getsockname()[1]
 
 
-_ssh_connect_lock = Lock()
+_ssh_connect_lock = threading.Lock()
 
 
 def ssh_connect(remote_machine, remote_port, service=VoidService, config={}):
@@ -356,7 +355,7 @@ class ServerSocketStream(SocketStream):
 
     def __init__(self, sock, server):
         self.__server = server
-        self.__lock = Lock()
+        self.__lock = threading.Lock()
         super().__init__(sock)
 
     def close(self):

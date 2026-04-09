@@ -4,17 +4,14 @@ import sys
 import inspect
 import itertools
 import socket
-import time  # noqa: F401
-import gc  # noqa: F401
 
 import collections
 import os
 import threading
 
 from weakref import ref
-from threading import Condition
 from rpyc.lib import worker, spawn, Timeout, get_methods, get_id_pack, hasattr_static, ObjectType
-from rpyc.lib.compat import pickle, next, Lock, maxint, select_error, acquire_lock  # noqa: F401
+from rpyc.lib.compat import pickle, next, maxint, select_error
 from rpyc.lib.colls import WeakValueDict, RefCountingColl
 from rpyc.core import consts, brine, vinegar, netref
 from rpyc.core.async_ import AsyncResult
@@ -162,9 +159,9 @@ class Connection:
         self.__HANDLERS = self.__request_handlers()
         self.__channel = channel
         self.__seqcounter = itertools.count()
-        self.__sendlock = Lock()
+        self.__sendlock = threading.Lock()
         self.__sending = False
-        self.__recv_event = Condition(Lock())
+        self.__recv_event = threading.Condition(threading.Lock())
         self._receiving = False
         self.__request_callbacks = {}
         self.__local_objects = RefCountingColl()
@@ -179,7 +176,7 @@ class Connection:
         self.__bind_threads = self._config['bind_threads']
         self._threads = None
         if self.__bind_threads:
-            self._lock = Lock()
+            self._lock = threading.Lock()
             self._threads = {}
             self._thread_pool = []
             self.__worker_pool = set()
@@ -314,8 +311,11 @@ class Connection:
 
                 while self.__send_queue:
                     data = self.__send_queue.pop(0)
-                    with _UnlockGuard(self.__sendlock):
+                    self.__sendlock.release()
+                    try:
                         self.__channel.send(data)
+                    finally:
+                        self.__sendlock.acquire()
 
             finally:
                 self.__sending = False
@@ -550,8 +550,11 @@ class Connection:
                             if not this_thread.serve:
                                 return False
 
-                            with _UnlockGuard(self._lock):
+                            self._lock.release()
+                            try:
                                 message = self.__channel.poll(timeout, predicate) and self.__channel.recv()
+                            finally:
+                                self._lock.acquire()
 
                             if not message:  # timeout or predicate
                                 return False
@@ -615,8 +618,11 @@ class Connection:
             # from upstream
             try:
                 while thread.loop:
-                    with _UnlockGuard(self._lock):
+                    self._lock.release()
+                    try:
                         self.serve(None)
+                    finally:
+                        self._lock.acquire()
 
             except (socket.error, select_error, IOError):
                 if not self.closed:
@@ -1079,40 +1085,6 @@ class _Thread:
 
     def incr(self):
         self._occupation_count += 1
-
-
-class _UnlockGuard:
-
-    def __init__(self, lock):
-        self._lock = lock
-        self.__local = threading.local()
-        if hasattr(lock, '_release_save'):
-            self._release_save = lock._release_save
-        if hasattr(lock, '_acquire_restore'):
-            self._acquire_restore = lock._acquire_restore
-        if hasattr(lock, '_is_owned'):
-            self._is_owned = lock._is_owned
-
-    def __enter__(self):
-        if not self._is_owned():
-            raise RuntimeError("cannot release an un-acquired lock")
-
-        states = getattr(self.__local, 'states', [])
-        states.append(self._release_save())
-        self.__local.states = states
-        return self
-
-    def __exit__(self, t, v, tb):
-        states = self.__local.states
-        self._acquire_restore(states.pop())
-        if states:
-            self.__local.states = states
-        else:
-            del self.__local.states
-
-    _release_save = Condition._release_save
-    _acquire_restore = Condition._acquire_restore
-    _is_owned = Condition._is_owned
 
 
 class _ReceivingGuard:

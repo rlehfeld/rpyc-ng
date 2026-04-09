@@ -5,8 +5,7 @@ import threading
 from collections.abc import Callable
 from rpyc.lib import worker
 from rpyc.lib.colls import WeakValueDict
-from rpyc.lib.compat import callable, Lock
-from rpyc.core.protocol import _UnlockGuard
+from rpyc.lib.compat import callable
 from rpyc.core.consts import HANDLE_BUFFITER, HANDLE_CALL
 from rpyc.core.netref import syncreq, asyncreq
 
@@ -227,7 +226,7 @@ class BgServingThread:
         self.__depth = int(active)
         self.__running = True
         self.__callback = callback
-        self.__condition = threading.Condition(Lock())
+        self.__condition = threading.Condition(threading.Lock())
         self.__thread = worker(self._bg_server)
 
     def __del__(self):
@@ -244,8 +243,11 @@ class BgServingThread:
             try:
                 while not self.__terminate:
                     if self.__depth > 0:
-                        with _UnlockGuard(self.__condition):
+                        self.__condition.release()
+                        try:
                             self.__conn.serve(timeout=None, predicate=self._terminate_or_pause)
+                        finally:
+                            self.__condition.acquire()
                     else:
                         self.__running = False
                         self.__condition.notify_all()
