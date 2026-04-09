@@ -1,3 +1,9 @@
+7.0.6
+=====
+Date: 2026-04-09
+
+- under Python, a threading.Lock is actually more a Semaphore than a Mutex which mean a lock can be released by a different thread. The old implementation was not taking this into account.
+
 7.0.5
 =====
 Date: 2026-04-08
