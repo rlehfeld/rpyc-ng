@@ -2,7 +2,7 @@
 =====
 Date: 2026-04-09
 
-- Fix some strange execution reodering issues due to usage of context managers
+- Fix some strange execution reordering issues due to usage of context managers
 
 7.0.6
 =====
