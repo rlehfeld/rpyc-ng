@@ -900,7 +900,11 @@ class Connection:
         conn = getattr(obj, '____conn__', None)
         if conn is not None:  # keep unwrapping!
             return conn.sync_req(consts.HANDLE_CMP, other, op)
-        return self.__access_attr(obj, op, (), "_rpyc_getattr", "allow_getattr", getattr)(other)
+        try:
+            compare = self.__access_attr(obj, op, (), "_rpyc_getattr", "allow_getattr", getattr)
+        except AttributeError:
+            return NotImplemented
+        return compare(other)
 
     def __handle_hash(self, obj):  # request handler
         return hash(obj)

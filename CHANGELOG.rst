@@ -1,3 +1,9 @@
+7.0.9
+=====
+Date: 2026-04-11
+
+- Return NotImplemented in case compare method, e.g. __le__, __gt__, ... is not exiting in the proxied class
+
 7.0.8
 =====
 Date: 2026-04-11
