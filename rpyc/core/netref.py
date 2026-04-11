@@ -416,9 +416,9 @@ def _make_method(name, doc):
 
     name = str(name)                                      # IronPython issue #10
     if name == "__call__":
-        def __call__(_self, *args, **kwargs):
+        def __call__(self, *args, **kwargs):
             kwargs = tuple(kwargs.items())
-            return syncreq(_self, consts.HANDLE_CALL, args, kwargs)
+            return syncreq(self, consts.HANDLE_CALL, args, kwargs)
         __call__.__doc__ = doc
         return __call__
     if name in slicers:                                 # 32/64 bit issue #41
@@ -516,7 +516,7 @@ def class_factory(id_pack, methods, conn=None):
         # only create methods that won't shadow BaseNetref during merge for mro
         if name not in LOCAL_ATTRS:  # i.e. `name != __class__`
             ns[name] = _make_method(name, doc)
-    netref_cls = type(name_pack, (BaseNetref, ), ns)
+    netref_cls = type(name_pack.rsplit('.', 1)[-1], (BaseNetref, ), ns)
     netref_cls.____id_pack__ = id_pack
     netref_cls.____conn__ = conn
     return netref_cls

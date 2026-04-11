@@ -1,3 +1,9 @@
+7.0.8
+=====
+Date: 2026-04-11
+
+- Fix __name__ property of generated proxy class
+
 7.0.7
 =====
 Date: 2026-04-09
