@@ -26,6 +26,7 @@ class MyService(rpyc.Service):
         time.sleep(2)
         return x * 17
 
+
 @unittest.skipIf(
     DEFAULT_CONFIG['bind_threads'],
     "bind threads create additional ServingThreads in the background. Test makes no sense"
