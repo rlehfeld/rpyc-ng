@@ -1,5 +1,6 @@
 7.0.10
 ======
+Date: 2026-04-12
 
 - fix possible for race in resume in BgServingThread.
 - Improve test for BgServingThread
