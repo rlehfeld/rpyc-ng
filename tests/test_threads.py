@@ -2,6 +2,7 @@
 import time
 import unittest
 import rpyc
+from rpyc.core import DEFAULT_CONFIG
 
 
 class MyService(rpyc.Service):
@@ -18,18 +19,21 @@ class MyService(rpyc.Service):
 
         def work(self):
             while self.active:
-                self.callback(time.time())
+                self.callback(time.monotonic())
                 time.sleep(self.interval)
 
     def exposed_foo(self, x):
         time.sleep(2)
         return x * 17
 
-
+@unittest.skipIf(
+    DEFAULT_CONFIG['bind_threads'],
+    "bind threads create additional ServingThreads in the background. Test makes no sense"
+)
 class Test_Multithreaded(unittest.TestCase):
     def setUp(self):
         self.conn = rpyc.connect_thread(remote_service=MyService)
-        self.bgserver = rpyc.BgServingThread(self.conn)
+        self.bgserver = rpyc.BgServingThread(self.conn, active=False)
 
     def tearDown(self):
         self.bgserver.stop()
@@ -42,12 +46,43 @@ class Test_Multithreaded(unittest.TestCase):
             counter[0] += 1
             print(f"callback {x}")
         invoker = self.conn.root.Invoker(callback, 1)
-        # 3 * 2sec = 6 sec = ~6 calls to callback
+        called = counter[0]
+        print(f"callback called {called} times")
+        self.assertTrue(called <= 1)
+        counter[0] = 0
+
+        print(f"direct {time.monotonic()}")
+        time.sleep(3)
+        print(f"direct {time.monotonic()}")
+        called = counter[0]
+        print(f"callback called {called} times")
+        self.assertTrue(called == 0)
+
+        self.bgserver.resume()
+        print(f"direct {time.monotonic()}")
+        time.sleep(3)
+        print(f"direct {time.monotonic()}")
+        self.bgserver.pause()
+        # 3+3 sec = ~6 calls to callback
+        called = counter[0]
+        print(f"callback called {called} times")
+        self.assertTrue(called >= 5)
+
+        time.sleep(2)
+        self.assertTrue(counter[0] == called)
+
+        self.bgserver.resume()
+        time.sleep(0.5)
+        counter[0] = 0
+        print(f"callback called {called} times")
         for i in range(3):
             print(f"foo{i} = {self.conn.root.foo(i)}")
+        self.bgserver.pause()
+        called = counter[0]
+        print(f"callback called {called} times")
+        # 3 * 2sec = 14 sec = ~6 extra calls to callback
         invoker.stop()
-        print(f"callback called {counter[0]} times")
-        self.assertTrue(counter[0] >= 5)
+        self.assertTrue(called >= 5)
 
 
 if __name__ == "__main__":

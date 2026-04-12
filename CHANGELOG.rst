@@ -1,3 +1,11 @@
+7.0.10
+======
+
+- fix possible for race in resume in BgServingThread.
+- Improve test for BgServingThread
+- Disable Thread Test for BgServingThread in bound thread scenario as here threads are spawned automatically (test makes no sense here)
+- Added Test Steps for pause and resume of BgServingThread
+
 7.0.9
 =====
 Date: 2026-04-11

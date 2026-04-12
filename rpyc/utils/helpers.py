@@ -270,6 +270,9 @@ class BgServingThread:
 
     def pause(self):
         with self.__condition:
+            if self.__terminate:
+                raise RuntimeError(f"already terminated {type(self).__name__}")
+
             if self.__depth > 0:
                 self.__depth -= 1
 
@@ -277,28 +280,30 @@ class BgServingThread:
                         threading.current_thread() is not self.__thread):
                     self.__condition.notify_all()
                     self.__conn.notify()
-                    self.__condition.wait_for(lambda: not self.__running)
+                    self.__condition.wait_for(lambda: self.__terminate or not self.__running)
+
+                    if self.__terminate:
+                        raise RuntimeError(f"already terminated {type(self).__name__}")
 
     def resume(self):
         with self.__condition:
             if self.__terminate:
                 raise RuntimeError(f"already terminated {type(self).__name__}")
 
-            if (self.__depth == 0 and
-                    threading.current_thread() is not self.__thread):
+            if self.__depth == 0 and threading.current_thread() is not self.__thread:
                 self.__condition.wait_for(lambda: self.__terminate or not self.__running)
 
                 if self.__terminate:
                     raise RuntimeError(f"already terminated {type(self).__name__}")
 
-                self.__depth += 1
+            self.__depth += 1
+
+            if not self.__running and threading.current_thread() is not self.__thread:
                 self.__condition.notify_all()
                 self.__condition.wait_for(lambda: self.__terminate or self.__running)
 
                 if self.__terminate:
                     raise RuntimeError(f"already terminated {type(self).__name__}")
-            else:
-                self.__depth += 1
 
     def __enter__(self):
         self.resume()
