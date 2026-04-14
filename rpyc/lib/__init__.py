@@ -82,6 +82,9 @@ class hybridmethod(object):
     def __set__(self, obj, val):
         raise AttributeError("Cannot overwrite method")
 
+    def __del__(self, obj, val):
+        raise AttributeError("Cannot delete method")
+
 
 def hasattr_static(obj, attr):
     """Returns if `inspect.getattr_static` can find an attribute of ``obj``."""

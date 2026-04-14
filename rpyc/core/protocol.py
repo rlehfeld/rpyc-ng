@@ -209,8 +209,7 @@ class Connection:
         self.__closed = True
         self.__channel.close()
         self.__local_root.on_disconnect(self)
-        with self.__recv_event:
-            self.__request_callbacks.clear()
+        self.__request_callbacks.clear()
         self.__local_objects.clear()
         self.__proxy_cache.clear()
         self.__netref_classes_cache.clear()
@@ -418,8 +417,7 @@ class Connection:
                             instantiate_oldstyle_exceptions=self._config["instantiate_oldstyle_exceptions"])
 
     def __seq_request_callback(self, msg, seq, is_exc, obj):
-        with self.__recv_event:
-            _callback = self.__request_callbacks.pop(seq, None)
+        _callback = self.__request_callbacks.pop(seq, None)
         if _callback is not None:
             _callback(is_exc, obj)
         elif self._config["logger"] is not None:
@@ -769,16 +767,14 @@ class Connection:
 
     def __async_request(self, handler, args=(), callback=(lambda a, b: None)):  # serving
         seq = self.__get_seq_id()
-        with self.__recv_event:
-            self.__request_callbacks[seq] = callback
+        self.__request_callbacks[seq] = callback
         try:
             self.__send(consts.MSG_REQUEST, seq, (handler, self.__box(args)))
         except Exception:
             # TODO: review test_remote_exception, logging exceptions show attempt to write on closed stream
             # depending on the case, the MSG_REQUEST may or may not have been sent completely
             # so, pop the callback and raise to keep response integrity is consistent
-            with self.__recv_event:
-                self.__request_callbacks.pop(seq, None)
+            self.__request_callbacks.pop(seq, None)
             raise
 
     def async_request(self, handler, *args, **kwargs):  # serving

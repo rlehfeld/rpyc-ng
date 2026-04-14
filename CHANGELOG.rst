@@ -1,3 +1,9 @@
+7.0.11
+======
+Date: 2026-04-14
+
+- fix a deadlock in the send path of the Connection class
+
 7.0.10
 ======
 Date: 2026-04-12
