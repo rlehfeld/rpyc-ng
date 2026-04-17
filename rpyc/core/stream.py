@@ -144,6 +144,7 @@ class Stream:
         predicate_result = False
 
         def polling_or_predicate():
+            nonlocal predicate_result
             predicate_result = (
                 predicate is not None and
                 predicate()
@@ -594,7 +595,9 @@ class PipeStream(Stream):
 
     def poll(self, timeout, predicate=None):
         predicate_result = False
+
         def ready():
+            nonlocal predicate_result
             predicate_result = predicate is not None and predicate()
             return (self.__ready or self.incoming is ClosedFile or predicate_result)
 
