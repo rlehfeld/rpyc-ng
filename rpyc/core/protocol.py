@@ -9,7 +9,7 @@ import collections
 import os
 import threading
 
-from weakref import ref
+from weakref import ref, WeakSet
 from rpyc.lib import worker, spawn, Timeout, get_methods, get_id_pack, hasattr_static, ObjectType
 from rpyc.lib.compat import pickle, next, maxint, select_error
 from rpyc.lib.colls import WeakValueDict, RefCountingColl
@@ -148,8 +148,10 @@ class Connection:
                    from the :data:`default configuration <DEFAULT_CONFIG>`)
     """
     __current = threading.local()
+    __connections = WeakSet()
 
     def __init__(self, root, channel, config={}):
+        self.__connections.add(self)
         self.__closed = True
         self._config = DEFAULT_CONFIG.copy()
         self._config.update(config)
@@ -159,30 +161,53 @@ class Connection:
         self.__HANDLERS = self.__request_handlers()
         self.__channel = channel
         self.__seqcounter = itertools.count()
-        self.__sendlock = threading.Lock()
-        self.__sending = False
         self.__recv_event = threading.Condition(threading.Lock())
+        # self.__send_event must use a re-entrant lock as __send might be
+        # called from gabage collection and thus can be called while having lock
+        self.__send_event = threading.Condition(threading.RLock())
         self._receiving = False
+        self.__send_queue = []
+        self.__send_loop = True
+        self.__send_worker = worker(self.__send_thread)
         self.__request_callbacks = {}
         self.__local_objects = RefCountingColl()
         self.__last_traceback = None
         self.__proxy_cache = WeakValueDict()
         self.__netref_classes_cache = {}
         self.__remote_root = None
-        self.__send_queue = []
         self.__local_root = root
         self.__closed = False
         # Settings for bind_threads
         self.__bind_threads = self._config['bind_threads']
         self._threads = None
         if self.__bind_threads:
-            self._lock = threading.Lock()
+            # self._lock must use a re-entrant lock as __send and __cleanup
+            # called from gabage collection and thus can be called while having lock
+            self._lock = threading.RLock()
             self._threads = {}
             self._thread_pool = []
             self.__worker_pool = set()
             self.__cleaning_thread = None
 
+    def stop_sending(self):
+        with self.__send_event:
+            send_worker = self.__send_worker
+            self.__send_worker = None
+            self.__send_loop = False
+            self.__send_event.notify()
+        if send_worker is not None:
+            send_worker.join()
+
+    @classmethod
+    def stop_connections(cls):
+        for conn in cls.__connections:
+            conn.stop_sending()
+
     def __del__(self):
+        # this is called from garbage collection
+        # garbage collection might kick in at any moment
+        # Therefore we must be very carefull what we call
+        # from here
         self.close()
         if self.__bind_threads:
             with self._lock:
@@ -203,12 +228,44 @@ class Connection:
         a, b = object.__repr__(self).split(" object ")
         return f"{a} {self._config['connid']!r} object {b}"
 
+    def __send_thread(self):
+        def predicate():
+            return not self.__send_loop or len(self.__send_queue) > 0
+
+        with self.__send_event:
+            exc = None
+            while True:
+                while self.__send_queue:
+                    seq, data = self.__send_queue.pop(0)
+                    self.__send_event.release()
+                    if exc is None:
+                        try:
+                            self.__channel.send(data)
+                        except BaseException as e:
+                            exc = e
+                            self.__seq_request_callback(exc, seq, True, exc)
+                            self.notify()
+                        finally:
+                            self.__send_event.acquire()
+                    else:
+                        self.__seq_request_callback(exc, seq, True, exc)
+                        self.notify()
+
+                if not self.__send_loop or exc is not None:
+                    break
+
+                self.__send_event.wait_for(predicate)
+
+            if exc is not None:
+                self.__send_loop = False
+
     def __cleanup(self, _anyway=True):  # IO
         if self.__closed and not _anyway:
             return
         self.__closed = True
         self.__channel.close()
         self.__local_root.on_disconnect(self)
+        self.stop_sending()
         self.__request_callbacks.clear()
         self.__local_objects.clear()
         self.__proxy_cache.clear()
@@ -300,24 +357,11 @@ class Connection:
                 else:
                     this_thread.decr()
 
-        with self.__sendlock:
-            self.__send_queue.append(data)
-            if self.__sending:
-                return
-
-            try:
-                self.__sending = True
-
-                while self.__send_queue:
-                    data = self.__send_queue.pop(0)
-                    self.__sendlock.release()
-                    try:
-                        self.__channel.send(data)
-                    finally:
-                        self.__sendlock.acquire()
-
-            finally:
-                self.__sending = False
+        with self.__send_event:
+            if not self.__send_loop:
+                raise EOFError()
+            self.__send_queue.append((seq, data))
+            self.__send_event.notify()
 
     def __box(self, obj):  # boxing
         """store a local object in such a way that it could be recreated on
@@ -417,12 +461,14 @@ class Connection:
                             instantiate_oldstyle_exceptions=self._config["instantiate_oldstyle_exceptions"])
 
     def __seq_request_callback(self, msg, seq, is_exc, obj):
-        _callback = self.__request_callbacks.pop(seq, None)
-        if _callback is not None:
+        unset = object()
+        _callback = self.__request_callbacks.pop(seq, unset)
+        if _callback is unset:
+            if self._config["logger"] is not None:
+                debug_msg = 'Received {} seq {} and a related request callback did not exist'
+                self._config["logger"].debug(debug_msg.format(msg, seq))
+        elif _callback is not None:
             _callback(is_exc, obj)
-        elif self._config["logger"] is not None:
-            debug_msg = 'Received {} seq {} and a related request callback did not exist'
-            self._config["logger"].debug(debug_msg.format(msg, seq))
 
     def __dispatch(self, data):  # serving---dispatch?
         msg, = brine.I1.unpack(data[:1])  # unpack just msg to minimize time to release
@@ -477,7 +523,7 @@ class Connection:
             return self.__serve_bound(timeout, wait_for_lock, predicate)
 
         def can_receive_or_predicate():
-            return not self._receiving or (predicate is not None and predicate())
+            return self.closed or not self._receiving or (predicate is not None and predicate())
 
         with self.__recv_event:
             if self._receiving:
@@ -491,9 +537,8 @@ class Connection:
         try:
             data = self.__channel.poll(timeout, predicate) and self.__channel.recv()
 
-        except Exception as exc:
-            if isinstance(exc, EOFError):
-                self.close()  # sends close async request
+        except EOFError:
+            self.close()  # sends close async request
             raise
         finally:
             with self.__recv_event:
@@ -765,7 +810,7 @@ class Connection:
         # _async_res is an instance of AsyncResult, the value property invokes Connection.serve via AsyncResult.wait
         return _async_res.value
 
-    def __async_request(self, handler, args=(), callback=(lambda a, b: None)):  # serving
+    def __async_request(self, handler, args=(), callback=None):  # serving
         seq = self.__get_seq_id()
         self.__request_callbacks[seq] = callback
         try:
@@ -879,8 +924,8 @@ class Connection:
     def __handle_getroot(self):  # request handler
         return self.__local_root
 
-    def __handle_del(self, obj, count=1):  # request handler
-        self.__local_objects.decref(get_id_pack(obj), count)
+    def __handle_del(self, id_pack, count):  # request handler
+        self.__local_objects.decref(id_pack, count)
 
     def __handle_repr(self, obj):  # request handler
         return repr(obj)
@@ -1107,3 +1152,8 @@ class _ReceivingGuard:
                 if not thread._deque:
                     thread._condition.notify()
                     break
+
+
+# unfortunately there is no official interface to register cleanup / termination
+# methods for non-daemon threds. Then use the unofficial one for the time beeing
+threading._register_atexit(Connection.stop_connections)

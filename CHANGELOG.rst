@@ -1,3 +1,14 @@
+7.0.12
+======
+Date: 2026-04-17
+
+- multiple fixes to multi thread usage,
+  e.g. when send was handled by different that the information of a send error was lost
+  further, tls sockets send and recv cannot be used at the same time and will cause issues
+- garbage collection can kick in at any time which mean the code called must be reentrant
+  save. E.g. when a remote object is no longer in use we must take care that the send path
+  does not block. Fixed through usage of a separate send thread.
+
 7.0.11
 ======
 Date: 2026-04-14

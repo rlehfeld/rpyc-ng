@@ -82,7 +82,7 @@ class hybridmethod(object):
     def __set__(self, obj, val):
         raise AttributeError("Cannot overwrite method")
 
-    def __del__(self, obj, val):
+    def __delete__(self, obj, val):
         raise AttributeError("Cannot delete method")
 
 

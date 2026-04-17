@@ -193,10 +193,16 @@ class NetrefMetaclass(type):
         return obj
 
     def __del__(self):
-        if self.____id_pack__ is not None:
+        # this is called from garbage collection
+        # garbage collection might kick in at any moment
+        # Therefore we must be very carefull what we call
+        # from here
+        conn = getattr(self, "____conn__", None)
+        if conn is not None:
+            id_pack = self.____id_pack__
             try:
-                asyncreq(self, consts.HANDLE_DEL, self.____refcount__)
-            except Exception:
+                conn.async_request(consts.HANDLE_DEL, id_pack, self.____refcount__)
+            except BaseException:
                 # raised in a destructor, most likely on program termination,
                 # when the connection might have already been closed.
                 # it's safe to ignore all exceptions here

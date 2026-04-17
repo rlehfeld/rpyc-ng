@@ -164,6 +164,10 @@ class DeployedServer(object):
             self.tun = remote_machine.tunnel(self.local_port, self.remote_port)
 
     def __del__(self):
+        # this is called from garbage collection
+        # garbage collection might kick in at any moment
+        # Therefore we must be very carefull what we call
+        # from here
         self.close()
 
     def __enter__(self):

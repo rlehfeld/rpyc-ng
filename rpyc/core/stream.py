@@ -40,11 +40,14 @@ class Stream:
 
     __slots__ = ('__socket_r', '__socket_w',
                  '__predicate',
-                 '__cond', '__polling', '__listening')
+                 '__cond', '__reading', '__polling', '__read_pause_depth',
+                 '__listening')
 
     def __init__(self):
         self.__cond = threading.Condition(threading.Lock())
         self.__polling = False
+        self.__reading = False
+        self.__read_pause_depth = 0
         self.__listening = False
         self.__predicate = None
 
@@ -93,29 +96,72 @@ class Stream:
         """returns the stream's file descriptor"""
         raise NotImplementedError()
 
+    def acquire_read(self):
+        def predicate():
+            return self.__read_pause_depth <= 0 and not self.__reading
+
+        with self.__cond:
+            self.__cond.wait_for(predicate)
+            self.__reading = True
+
+    def release_read(self):
+        with self.__cond:
+            if not self.__reading:
+                raise RuntimeError('acquire_read not called before')
+            self.__reading = False
+            self.__cond.notify_all()
+
+    def pause_read(self):
+        def predicate():
+            return not (self.__reading or self.__polling)
+
+        with self.__cond:
+            self.__read_pause_depth += 1
+            if self.__polling and self.__socket_w is not None:
+                self.__socket_w.send(b'P')
+            self.__cond.wait_for(predicate)
+
+    def resume_read(self):
+        with self.__cond:
+            if self.__read_pause_depth <= 0:
+                raise RuntimeError('pause_write not called before')
+            self.__read_pause_depth -= 1
+            self.__cond.notify_all()
+
     def notify(self):
         with self.__cond:
             if (self.__socket_w is not None and
                     self.__predicate is not None and
                     self.__predicate()):
                 self.__socket_w.send(b'N')
+            self.__cond.notify_all()
 
     def poll(self, timeout, predicate=None):
         """indicates whether the stream has data to read (within *timeout*
         seconds)"""
+
+        timeout = Timeout(timeout)
+
+        def polling_or_predicate():
+            return (
+                (self.__read_pause_depth <= 0 and
+                 not self.__polling) or (
+                     predicate is not None and
+                     predicate())
+            )
+
         with self.__cond:
-            if self.__polling:
+            self.__cond.wait_for(polling_or_predicate, timeout.timeleft())
+
+            if predicate is not None and predicate():
                 return False
+
             self.__polling = True
             self.__predicate = predicate
             socket_r = self.__socket_r
             self.__listening = socket_r is not None
 
-        timeout = Timeout(timeout)
         try:
-            if predicate is not None and predicate():
-                return False
-
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
             sfd = self.fileno()
             if socket_r is not None:
@@ -145,8 +191,8 @@ class Stream:
                         wfd = None
                         with self.__cond:
                             self.__listening = False
-                            self.__cond.notify()
-                    if predicate is not None and predicate():
+                            self.__cond.notify_all()
+                    if c == b'P' or (predicate is not None and predicate()):
                         return False
                     continue
 
@@ -163,7 +209,7 @@ class Stream:
                 self.__predicate = None
                 self.__polling = False
                 self.__listening = False
-                self.__cond.notify()
+                self.__cond.notify_all()
 
     def read(self, count):
         """reads **exactly** *count* bytes, or raise EOFError
@@ -222,14 +268,6 @@ class SocketStream(Stream):
 
     def __init__(self, sock):
         set_inheritable(sock, False)
-        try:
-            getsockopt = sock.getsockopt
-        except AttributeError:
-            pass
-        else:
-            sendbufsize = getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
-            if sendbufsize < 40 * self.MAX_IO_CHUNK:
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 40 * self.MAX_IO_CHUNK)
         self.sock = sock
         super().__init__()
 
@@ -394,6 +432,8 @@ class SocketStream(Stream):
     def read(self, count):
         data = []
         while count > 0:
+            # send and recv must not be done in parallel on TLS sockets
+            self.acquire_read()
             try:
                 buf = self.sock.recv(min(self.MAX_IO_CHUNK, count))
             except socket.timeout:
@@ -404,6 +444,8 @@ class SocketStream(Stream):
                     continue
                 self.close()
                 raise EOFError(ex)
+            finally:
+                self.release_read()
             if not buf:
                 self.close()
                 raise EOFError("connection closed by peer")
@@ -414,7 +456,13 @@ class SocketStream(Stream):
     def write(self, data):
         try:
             while data:
-                count = self.sock.send(data[:self.MAX_IO_CHUNK])
+                # send and recv must not be done in parallel on TLS sockets
+                self.pause_read()
+                try:
+                    count = self.sock.send(data[:self.MAX_IO_CHUNK])
+                finally:
+                    # resume reading
+                    self.resume_read()
                 data = data[count:]
         except socket.error as ex:
             self.close()
@@ -465,6 +513,10 @@ class PipeStream(Stream):
         self.__reader = worker(self.__readthread, incoming)
 
     def __del__(self):
+        # this is called from garbage collection
+        # garbage collection might kick in at any moment
+        # Therefore we must be very carefull what we call
+        # from here
         self.close()
 
     @classmethod

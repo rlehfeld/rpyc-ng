@@ -258,8 +258,9 @@ class Server(object):
             self.logger.info(f"goodbye {addrinfo}")
 
     def _handle_connection(self, conn):
-        """This methoed should implement the server's logic."""
+        """This method should implement the server's logic."""
         conn.serve_all()
+        conn.close()
 
     def _bg_register(self):
         interval = self.registrar.REREGISTER_INTERVAL
@@ -354,51 +355,55 @@ class ThreadedServer(Server):
     """
 
     def __init__(self, *args, **kwargs):
-        self._cond = threading.Condition(threading.Lock())
-        self._workers = set()
-        self._terminated = set()
+        self.__cond = threading.Condition(threading.Lock())
+        self.__workers = set()
+        self.__terminated = set()
         super().__init__(*args, **kwargs)
 
     def __del__(self):
+        # this is called from garbage collection
+        # garbage collection might kick in at any moment
+        # Therefore we must be very carefull what we call
+        # from here
         self.close()
 
     def close(self):
         super().close()
 
-        with self._cond:
-            if threading.current_thread() in self._workers:
+        with self.__cond:
+            if threading.current_thread() in self.__workers | self.__terminated:
                 return
 
-            self._cond.wait_for(lambda: not self._workers, timeout=2)
-            terminated = self._terminated
-            self._terminated = set()
+            self.__cond.wait_for(lambda: not self.__workers, timeout=2)
+            terminated = self.__terminated
+            self.__terminated = set()
 
         for t in terminated:
             t.join()
 
     def _accept_method(self, sock):
-        with self._cond:
-            terminated = self._terminated
-            self._terminated = set()
+        with self.__cond:
+            terminated = self.__terminated
+            self.__terminated = set()
 
         for t in terminated:
             t.join()
 
-        with self._cond:
+        with self.__cond:
             t = worker(self._authenticate_and_serve_client, sock)
-            self._workers.add(t)
+            self.__workers.add(t)
 
     def _authenticate_and_serve_client(self, sock):
         try:
             super()._authenticate_and_serve_client(sock)
         finally:
             current = threading.current_thread()
-            with self._cond:
-                if current in self._workers:
-                    self._terminated.add(current)
-                    self._workers.discard(current)
-                    if not self._workers:
-                        self._cond.notify_all()
+            with self.__cond:
+                if current in self.__workers:
+                    self.__terminated.add(current)
+                    self.__workers.discard(current)
+                    if not self.__workers:
+                        self.__cond.notify_all()
 
 
 class ThreadPoolServer(Server):

@@ -17,7 +17,7 @@ class ParentGDB(rpyc.Service):
         gdb_cmd = ['gdb', '-q', '-x', pathlib.Path(tests_path, 'gdb_service.py')]
         env = os.environ.copy()
         env['PYTHONPATH'] = ':'.join(sys.path)
-        self._proc = subprocess.Popen(gdb_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+        self._proc = subprocess.Popen(gdb_cmd, stdout=subprocess.PIPE, stderr=None, env=env)
         stdout = self._proc.stdout.readline()
         self._gdb_svc_port = int(stdout.strip().decode())
         print(self._gdb_svc_port)
