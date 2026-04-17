@@ -63,8 +63,8 @@ class Stream:
             fd = self.__socket_r.fileno()
             flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-        # else:
-        #     self.__socket_r.setblocking(False)
+        else:
+            self.__socket_r.setblocking(False)
 
     def close(self):
         """closes the stream, releasing any system resources associated with it"""
@@ -158,9 +158,7 @@ class Stream:
 
         with self.__cond:
             result = self.__cond.wait_for(polling_or_predicate, timeout.timeleft())
-            if result is False:
-                return False
-            if predicate_result:
+            if not result or predicate_result:
                 return False
 
             self.__polling = True
@@ -604,9 +602,7 @@ class PipeStream(Stream):
 
         with self.__condition:
             result = self.__condition.wait_for(ready, timeout.timeleft())
-            if result is False:
-                return False
-            if predicate_result:
+            if not result or predicate_result:
                 return False
             if self.__ready:
                 return True

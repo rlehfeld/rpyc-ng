@@ -527,10 +527,13 @@ class Connection:
         def can_receive_or_predicate():
             nonlocal predicate_result
             predicate_result = predicate is not None and predicate()
-            return self.closed or not self._receiving or predicate_result
+            return not self._receiving or predicate_result
 
         with self.__recv_event:
-            if self._receiving:
+            success = can_receive_or_predicate()
+            if predicate_result:
+                return False
+            if not success:
                 if not wait_for_lock:
                     return False
                 success = self.__recv_event.wait_for(can_receive_or_predicate, timeout.timeleft())
@@ -538,16 +541,20 @@ class Connection:
                     return False
             self._receiving = True
 
+        exc = None
+
         try:
             data = self.__channel.poll(timeout, predicate) and self.__channel.recv()
-
-        except EOFError:
-            self.close()  # sends close async request
-            raise
+        except EOFError as e:
+            exc = e
         finally:
             with self.__recv_event:
                 self._receiving = False
                 self.__recv_event.notify_all()
+
+        if exc is not None:
+            self.close()  # sends close async request
+            raise exc from None
 
         if data:
             self.__dispatch(data)  # Dispatch will unbox, invoke callbacks, etc.
@@ -565,15 +572,17 @@ class Connection:
         :returns: ``True`` if a request or reply were received, ``False`` otherwise.
         """
         message_available = False
-
+        predicate_result = False
         try:
             with self._lock:
                 this_thread = self.__get_thread()
 
                 def isready_or_predicate():
                     nonlocal message_available
+                    nonlocal predicate_result
                     message_available = bool(this_thread._deque)
-                    return message_available or not self._receiving or (predicate is not None and predicate())
+                    predicate_result = predicate is not None and predicate()
+                    return message_available or predicate_result
 
                 ready = isready_or_predicate()
                 if not ready and wait_for_lock:
@@ -581,8 +590,8 @@ class Connection:
                     ready = this_thread._condition.wait_for(isready_or_predicate, timeout=timeout.timeleft())
                     self._thread_pool.remove(this_thread)  # leave pool
 
-                if not ready or (predicate is not None and predicate()):
-                    # timeout or not wait_for_lock
+                if not ready or predicate_result:
+                    # timeout or not wait_for_lock or predicate
                     return False
 
                 if message_available:
