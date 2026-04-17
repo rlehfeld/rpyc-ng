@@ -195,7 +195,7 @@ class NetrefMetaclass(type):
     def __del__(self):
         # this is called from garbage collection
         # garbage collection might kick in at any moment
-        # Therefore we must be very carefull what we call
+        # Therefore we must be very careful what we call
         # from here
         conn = getattr(self, "____conn__", None)
         if conn is not None:

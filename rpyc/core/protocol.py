@@ -163,7 +163,7 @@ class Connection:
         self.__seqcounter = itertools.count()
         self.__recv_event = threading.Condition(threading.Lock())
         # self.__send_event must use a re-entrant lock as __send might be
-        # called from gabage collection and thus can be called while having lock
+        # called from garbage collection and thus can be called while having lock
         self.__send_event = threading.Condition(threading.RLock())
         self._receiving = False
         self.__send_queue = []
@@ -182,7 +182,7 @@ class Connection:
         self._threads = None
         if self.__bind_threads:
             # self._lock must use a re-entrant lock as __send and __cleanup
-            # called from gabage collection and thus can be called while having lock
+            # called from garbage collection and thus can be called while having lock
             self._lock = threading.RLock()
             self._threads = {}
             self._thread_pool = []
@@ -206,7 +206,7 @@ class Connection:
     def __del__(self):
         # this is called from garbage collection
         # garbage collection might kick in at any moment
-        # Therefore we must be very carefull what we call
+        # Therefore we must be very careful what we call
         # from here
         self.close()
         if self.__bind_threads:
@@ -1155,5 +1155,5 @@ class _ReceivingGuard:
 
 
 # unfortunately there is no official interface to register cleanup / termination
-# methods for non-daemon threds. Then use the unofficial one for the time beeing
+# methods for non-daemon threads. Then use the unofficial one for the time being
 threading._register_atexit(Connection.stop_connections)
