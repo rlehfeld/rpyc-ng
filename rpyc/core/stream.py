@@ -151,8 +151,9 @@ class Stream:
             )
 
         with self.__cond:
-            self.__cond.wait_for(polling_or_predicate, timeout.timeleft())
-
+            result = self.__cond.wait_for(polling_or_predicate, timeout.timeleft())
+            if result is False:
+                return False
             if predicate is not None and predicate():
                 return False
 
@@ -593,7 +594,9 @@ class PipeStream(Stream):
             return (self.__ready or self.incoming is ClosedFile or (predicate is not None and predicate()))
 
         with self.__condition:
-            self.__condition.wait_for(ready, timeout.timeleft())
+            result = self.__condition.wait_for(ready, timeout.timeleft())
+            if result is False:
+                return False
             if predicate is not None and predicate():
                 return False
             if self.__ready:
