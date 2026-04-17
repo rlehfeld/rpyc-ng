@@ -582,7 +582,7 @@ class Connection:
                     nonlocal predicate_result
                     message_available = bool(this_thread._deque)
                     predicate_result = predicate is not None and predicate()
-                    return message_available or predicate_result
+                    return message_available or not self._receiving or predicate_result
 
                 ready = isready_or_predicate()
                 if not ready and wait_for_lock:
