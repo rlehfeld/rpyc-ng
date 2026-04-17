@@ -243,13 +243,12 @@ class Connection:
                             self.__channel.send(data)
                         except BaseException as e:
                             exc = e
+                    try:
+                        if exc is not None:
                             self.__seq_request_callback(exc, seq, True, exc)
                             self.notify()
-                        finally:
-                            self.__send_event.acquire()
-                    else:
-                        self.__seq_request_callback(exc, seq, True, exc)
-                        self.notify()
+                    finally:
+                        self.__send_event.acquire()
 
                 if not self.__send_loop or exc is not None:
                     break

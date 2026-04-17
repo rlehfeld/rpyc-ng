@@ -141,20 +141,24 @@ class Stream:
         seconds)"""
 
         timeout = Timeout(timeout)
+        predicate_result = False
 
         def polling_or_predicate():
+            predicate_result = (
+                predicate is not None and
+                predicate()
+            )
+
             return (
                 (self.__read_pause_depth <= 0 and
-                 not self.__polling) or (
-                     predicate is not None and
-                     predicate())
+                 not self.__polling) or predicate_result
             )
 
         with self.__cond:
             result = self.__cond.wait_for(polling_or_predicate, timeout.timeleft())
             if result is False:
                 return False
-            if predicate is not None and predicate():
+            if predicate_result:
                 return False
 
             self.__polling = True
@@ -193,9 +197,8 @@ class Stream:
                         with self.__cond:
                             self.__listening = False
                             self.__cond.notify_all()
-                    if c == b'P' or (predicate is not None and predicate()):
-                        return False
-                    continue
+                        continue
+                    return False
 
                 return any(sfd == fd for fd, _ in rl)
 
@@ -590,14 +593,16 @@ class PipeStream(Stream):
             self.__condition.notify()
 
     def poll(self, timeout, predicate=None):
+        predicate_result = False
         def ready():
-            return (self.__ready or self.incoming is ClosedFile or (predicate is not None and predicate()))
+            predicate_result = predicate is not None and predicate()
+            return (self.__ready or self.incoming is ClosedFile or predicate_result)
 
         with self.__condition:
             result = self.__condition.wait_for(ready, timeout.timeleft())
             if result is False:
                 return False
-            if predicate is not None and predicate():
+            if predicate_result:
                 return False
             if self.__ready:
                 return True
