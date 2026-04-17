@@ -160,6 +160,10 @@ class Stream:
             result = self.__cond.wait_for(polling_or_predicate, timeout.timeleft())
             if not result or predicate_result:
                 return False
+            assert (
+                self.__read_pause_depth <= 0 and
+                not self.__polling
+            ), f"unexpected state {(self.__read_pause_depth, self.__polling)=}"
 
             self.__polling = True
             self.__predicate = predicate
@@ -187,6 +191,7 @@ class Stream:
                     try:
                         c = socket_r.recv(1)
                     except BaseException:
+                        print(f"{rl=!r}, {wfd=}, {sfd=}", file=sys.__stderr__)
                         raise
 
                     if c == b'C':
