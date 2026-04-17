@@ -257,6 +257,7 @@ class Connection:
                 self.__send_event.wait_for(predicate)
 
             if exc is not None:
+                print(f'{exc!r} during send, terminating', file=sys.__stderr__)
                 self.__send_loop = False
 
     def __cleanup(self, _anyway=True):  # IO
