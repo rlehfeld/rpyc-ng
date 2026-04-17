@@ -63,8 +63,8 @@ class Stream:
             fd = self.__socket_r.fileno()
             flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-        else:
-            self.__socket_r.setblocking(False)
+        # else:
+        #     self.__socket_r.setblocking(False)
 
     def close(self):
         """closes the stream, releasing any system resources associated with it"""
@@ -126,7 +126,8 @@ class Stream:
             if self.__read_pause_depth <= 0:
                 raise RuntimeError('pause_write not called before')
             self.__read_pause_depth -= 1
-            self.__cond.notify_all()
+            if self.__read_pause_depth == 0:
+                self.__cond.notify_all()
 
     def notify(self):
         with self.__cond:

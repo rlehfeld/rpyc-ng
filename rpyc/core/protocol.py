@@ -522,15 +522,19 @@ class Connection:
         if self.__bind_threads:
             return self.__serve_bound(timeout, wait_for_lock, predicate)
 
+        predicate_result = False
+
         def can_receive_or_predicate():
-            return self.closed or not self._receiving or (predicate is not None and predicate())
+            nonlocal predicate_result
+            predicate_result = predicate is not None and predicate()
+            return self.closed or not self._receiving or predicate_result
 
         with self.__recv_event:
             if self._receiving:
                 if not wait_for_lock:
                     return False
                 success = self.__recv_event.wait_for(can_receive_or_predicate, timeout.timeleft())
-                if not success or (predicate is not None and predicate()):
+                if not success or predicate_result:
                     return False
             self._receiving = True
 
