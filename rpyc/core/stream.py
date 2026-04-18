@@ -170,16 +170,17 @@ class Stream:
             socket_r = self.__socket_r
             self.__listening = socket_r is not None
 
+        blockings = 0
         try:
+            p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
+            sfd = self.fileno()
+            if socket_r is not None:
+                wfd = socket_r.fileno()
+                p.register(wfd, "r")
+            else:
+                wfd = None
+            p.register(sfd, "r")
             while True:
-                p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
-                sfd = self.fileno()
-                if socket_r is not None:
-                    wfd = socket_r.fileno()
-                    p.register(wfd, "r")
-                else:
-                    wfd = None
-                p.register(sfd, "r")
                 try:
                     rl = p.poll(timeout.timeleft())
                 except select_error as ex:
@@ -190,6 +191,13 @@ class Stream:
                 if wfd is not None and any(wfd == fd for fd, _ in rl):
                     try:
                         c = socket_r.recv(1)
+                    except BlockingIOError:
+                        # actually should never come here but seen together
+                        # with gevent monkey patched poll. So something is
+                        # not working right here. Just ignore and continue
+                        blockings += 1
+                        print(f'{blockings=}', file=sys.__stderr__)
+                        continue
                     except BaseException:
                         print(f"{rl=!r}, {wfd=}, {sfd=}", file=sys.__stderr__)
                         raise
