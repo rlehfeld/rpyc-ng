@@ -170,7 +170,6 @@ class Stream:
             socket_r = self.__socket_r
             self.__listening = socket_r is not None
 
-        blockings = 0
         try:
             p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
             sfd = self.fileno()
@@ -193,13 +192,11 @@ class Stream:
                         c = socket_r.recv(1)
                     except BlockingIOError:
                         # actually should never come here but seen together
-                        # with gevent monkey patched poll. So something is
-                        # not working right here. Just ignore and continue
-                        blockings += 1
-                        print(f'{blockings=}', file=sys.__stderr__)
+                        # with gevent monkey patched poll on windows. So
+                        # something is not working right here.
+                        # Just ignore and continue for the moment
                         continue
                     except BaseException:
-                        print(f"{rl=!r}, {wfd=}, {sfd=}", file=sys.__stderr__)
                         raise
 
                     if c == b'C':
