@@ -171,15 +171,15 @@ class Stream:
             self.__listening = socket_r is not None
 
         try:
-            p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
-            sfd = self.fileno()
-            if socket_r is not None:
-                wfd = socket_r.fileno()
-                p.register(wfd, "r")
-            else:
-                wfd = None
-            p.register(sfd, "r")
             while True:
+                p = poll()   # from lib.compat, it may be a select object on non-Unix platforms
+                sfd = self.fileno()
+                if socket_r is not None:
+                    wfd = socket_r.fileno()
+                    p.register(wfd, "r")
+                else:
+                    wfd = None
+                p.register(sfd, "r")
                 try:
                     rl = p.poll(timeout.timeleft())
                 except select_error as ex:
