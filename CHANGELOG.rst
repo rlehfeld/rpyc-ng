@@ -1,3 +1,10 @@
+7.0.13
+======
+Date: 2026-04.19
+
+- improve type annotations for simple types
+  type(None), int, bool, float, bytes, str, complex, type(NotImplemented), type(Ellipsis)
+
 7.0.12
 ======
 Date: 2026-04-17
