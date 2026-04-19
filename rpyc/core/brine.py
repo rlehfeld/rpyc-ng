@@ -53,11 +53,13 @@ TAG_NONETYPE = b"\x1c"
 TAG_INTTYPE = b"\x1d"
 TAG_BOOLTYPE = b"\x1e"
 TAG_FLOATTYPE = b"\x1f"
-TAG_BYTESTYPE = b"\x20"
-TAG_STRTYPE = b"\x21"
-TAG_COMPLEXTYPE = b"\x22"
-TAG_NOTIMPLEMENTEDTYPE = b"\x23"
-TAG_ELLIPSISTYPE = b"\x24"
+
+# from 0x20 - 0xef are imminent ints
+TAG_BYTESTYPE = b"\xf0"
+TAG_STRTYPE = b"\xf1"
+TAG_COMPLEXTYPE = b"\xf2"
+TAG_NOTIMPLEMENTEDTYPE = b"\xf3"
+TAG_ELLIPSISTYPE = b"\xf4"
 
 IMM_INTS = dict((i, bytes([i + 0x50])) for i in range(-0x30, 0xa0))
 
