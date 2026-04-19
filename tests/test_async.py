@@ -7,7 +7,7 @@ class TestAsync(unittest.TestCase):
     def setUp(self):
         self.conn = rpyc.classic.connect_thread()
         self.a_sleep = rpyc.async_(self.conn.modules.time.sleep)
-        self.a_int = rpyc.async_(self.conn.builtin.int)
+        self.a_list = rpyc.async_(self.conn.builtin.list)
 
     def tearDown(self):
         self.conn.close()
@@ -56,10 +56,10 @@ class TestAsync(unittest.TestCase):
         self.assertRaises(rpyc.AsyncResultTimeout, lambda: res.value)
 
     def test_exceptions(self):
-        res = self.a_int("foo")
+        res = self.a_list(1)
         res.wait()
         self.assertTrue(res.error)
-        self.assertRaises(ValueError, lambda: res.value)
+        self.assertRaises(TypeError, lambda: res.value)
 
 
 if __name__ == "__main__":

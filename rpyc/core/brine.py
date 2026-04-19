@@ -49,6 +49,16 @@ TAG_FLOAT = b"\x18"
 TAG_SLICE = b"\x19"
 TAG_FSET = b"\x1a"
 TAG_COMPLEX = b"\x1b"
+TAG_NONETYPE = b"\x1c"
+TAG_INTTYPE = b"\x1d"
+TAG_BOOLTYPE = b"\x1e"
+TAG_FLOATTYPE = b"\x1f"
+TAG_BYTESTYPE = b"\x20"
+TAG_STRTYPE = b"\x21"
+TAG_COMPLEXTYPE = b"\x22"
+TAG_NOTIMPLEMENTEDTYPE = b"\x23"
+TAG_ELLIPSISTYPE = b"\x24"
+
 IMM_INTS = dict((i, bytes([i + 0x50])) for i in range(-0x30, 0xa0))
 
 # Below "!" is used to set byte order as network (= big-endian). See https://docs.python.org/3/library/struct.html
@@ -64,6 +74,7 @@ I4 = Struct("!L")  # Python type int w/ size [4] (ctype unsigned long)
 # TODO: Switch to native_id when 3.7 is EOL b/c PyThread_get_thread_ident is inheritly hosed due to casting.
 I8I8 = Struct("!QQ")
 
+_dump_type_registry = {}
 _dump_registry = {}
 _load_registry = {}
 IMM_INTS_LOADER = dict((v, k) for k, v in IMM_INTS.items())
@@ -183,12 +194,61 @@ def _dump_tuple(obj, stream):
         _dump(item, stream)
 
 
+@register(_dump_type_registry, type(None))
+def _dump_nonetype(obj, stream):
+    stream.append(TAG_NONETYPE)
+
+
+@register(_dump_type_registry, int)
+def _dump_inttype(obj, stream):
+    stream.append(TAG_INTTYPE)
+
+
+@register(_dump_type_registry, bool)
+def _dump_booltype(obj, stream):
+    stream.append(TAG_BOOLTYPE)
+
+
+@register(_dump_type_registry, float)
+def _dump_floattype(obj, stream):
+    stream.append(TAG_FLOATTYPE)
+
+
+@register(_dump_type_registry, bytes)
+def _dump_bytestype(obj, stream):
+    stream.append(TAG_BYTESTYPE)
+
+
+@register(_dump_type_registry, str)
+def _dump_strtype(obj, stream):
+    stream.append(TAG_STRTYPE)
+
+
+@register(_dump_type_registry, complex)
+def _dump_complextype(obj, stream):
+    stream.append(TAG_COMPLEXTYPE)
+
+
+@register(_dump_type_registry, type(NotImplemented))
+def _dump_notimplementedtype(obj, stream):
+    stream.append(TAG_NOTIMPLEMENTEDTYPE)
+
+
+@register(_dump_type_registry, type(Ellipsis))
+def _dump_elipsistype(obj, stream):
+    stream.append(TAG_ELLIPSISTYPE)
+
+
 def _undumpable(obj, stream):
     raise TypeError(f"cannot dump {obj}")
 
 
+def _dumptype(obj, stream):
+    _dump_type_registry.get(obj, _undumpable)(obj, stream)
+
+
 def _dump(obj, stream):
-    _dump_registry.get(type(obj), _undumpable)(obj, stream)
+    _dump_registry.get(type(obj), _dumptype)(obj, stream)
 
 
 # ===============================================================================
@@ -333,6 +393,51 @@ def _load_int_l4(stream):
     return int(stream.read(l))
 
 
+@register(_load_registry, TAG_NONETYPE)
+def _load_nonetype(stream):
+    return type(None)
+
+
+@register(_load_registry, TAG_INTTYPE)
+def _load_inttype(stream):
+    return int
+
+
+@register(_load_registry, TAG_BOOLTYPE)
+def _load_booltype(stream):
+    return bool
+
+
+@register(_load_registry, TAG_FLOATTYPE)
+def _load_floattype(stream):
+    return float
+
+
+@register(_load_registry, TAG_BYTESTYPE)
+def _load_bytestype(stream):
+    return bytes
+
+
+@register(_load_registry, TAG_STRTYPE)
+def _load_strtype(stream):
+    return str
+
+
+@register(_load_registry, TAG_COMPLEXTYPE)
+def _load_complextype(stream):
+    return complex
+
+
+@register(_load_registry, type(NotImplemented))
+def _load_notimplementedtype(stream):
+    return type(NotImplemented)
+
+
+@register(_load_registry, type(Ellipsis))
+def _load_ellipsistype(stream):
+    return type(Ellipsis)
+
+
 def _load(stream):
     tag = stream.read(1)
     if tag in IMM_INTS_LOADER:
@@ -376,6 +481,8 @@ def dumpable(obj):
     :returns: ``True`` if the object is dumpable (e.g., :func:`dump` would succeed),
               ``False`` otherwise
     """
+    if type(obj) is type and obj in simple_types:
+        return True
     if type(obj) in simple_types:
         return True
     if type(obj) in (tuple, frozenset):

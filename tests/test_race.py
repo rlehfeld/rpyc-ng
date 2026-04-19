@@ -12,8 +12,7 @@ import unittest
 class TestRace(unittest.TestCase):
     def setUp(self):
         self.connection = rpyc.classic.connect_thread()
-
-        self.a_str = rpyc.async_(self.connection.builtin.str)
+        self.a_list = rpyc.async_(self.connection.builtin.list)
 
     def tearDown(self):
         self.connection.close()
@@ -37,7 +36,7 @@ class TestRace(unittest.TestCase):
             timer = threading.Timer(1, sendsigint)
             timer.start()
 
-            a_result = self.a_str("")  # request
+            a_result = self.a_list("")  # request
             time.sleep(0.1)  # wait for race to start
             try:
                 a_result.wait()
