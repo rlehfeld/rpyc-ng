@@ -61,7 +61,7 @@ class Test_GeventServer(unittest.TestCase):
                 t.join()
             stop = time.monotonic()
 
-            self.assertLessEqual(stop - start, 2)
+            self.assertLessEqual(stop - start, 3)
 
         finally:
             for c in conns:

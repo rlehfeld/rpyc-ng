@@ -358,6 +358,10 @@ class Connection:
 
         with self.__send_event:
             if not self.__send_loop:
+                if any(threading.current_thread() is con.__send_worker for con in self.__connections):
+                    # can only cone here in case garbage collection was
+                    # run by one of the send worker threads
+                    return
                 raise EOFError()
             self.__send_queue.append((seq, data))
             self.__send_event.notify()

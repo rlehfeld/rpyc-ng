@@ -17,8 +17,10 @@ class Channel(object):
     we deliberately add ``\\n`` at the end of each frame.
     """
 
-    COMPRESSION_THRESHOLD = 3000
-    COMPRESSION_LEVEL = 1
+    if zlib:
+        COMPRESSION_THRESHOLD = 1024
+        COMPRESSION_LEVEL = zlib.Z_DEFAULT_COMPRESSION
+
     FRAME_HEADER = Struct("!LB")
     FLUSHER = BYTES_LITERAL("\n")  # cause any line-buffered layers below us to flush
     __slots__ = ["stream", "compress"]

@@ -1,12 +1,12 @@
 7.0.14
 ======
-Date: 2026-04.19
+Date: 2026-04-19
 
 - Fixes clash with immiment ints in brine.py for the simple types
 
 7.0.13
 ======
-Date: 2026-04.19
+Date: 2026-04-19
 
 - improve type annotations for simple types
   type(None), int, bool, float, bytes, str, complex, type(NotImplemented), type(Ellipsis)
@@ -41,7 +41,7 @@ Date: 2026-04-12
 =====
 Date: 2026-04-11
 
-- Return NotImplemented in case compare method, e.g. __le__, __gt__, ... is not exiting in the proxied class
+- Return NotImplemented in case compare method, e.g. __le__, __gt__, ... is not existing in the proxied class
 
 7.0.8
 =====
