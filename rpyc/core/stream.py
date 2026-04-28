@@ -3,6 +3,7 @@ An abstraction layer over OS-dependent file-like objects, that provides a
 consistent view of a *duplex byte stream*.
 """
 import sys
+import io
 import os
 import socket
 import errno
@@ -517,14 +518,46 @@ class PipeStream(Stream):
     MAX_IO_CHUNK = STREAM_CHUNK
 
     def __init__(self, incoming, outgoing):
-        set_inheritable(incoming, False)
-        set_inheritable(outgoing, False)
+        def rawstream(stream, mode):
+            fileno = stream.fileno()
+            try:
+                stream.detach()
+            except (AttributeError, io.UnsupportedOperation):
+                return stream
+            return open(fileno, mode, buffering=0)
+
+        self.__redirect_inputs(incoming)
+        self.__redirect_outputs(outgoing)
         outgoing.flush()
-        self.incoming = incoming
-        self.outgoing = outgoing
+        rawincoming = rawstream(incoming, "rb")
+        rawoutgoing = rawstream(outgoing, "wb")
+        set_inheritable(rawincoming, False)
+        set_inheritable(rawoutgoing, False)
+        self.incoming = rawincoming
+        self.outgoing = rawoutgoing
         self.__condition = threading.Condition(threading.Lock())
         self.__ready = BYTES_LITERAL("")
-        self.__reader = worker(self.__readthread, incoming)
+        self.__reader = worker(self.__readthread, rawincoming)
+
+    @staticmethod
+    def __redirect_inputs(stream):
+        inputs = ('stdin', '__stdin__')
+        newinput = None
+        for attr in inputs:
+            if getattr(sys, attr) is stream:
+                if newinput is None:
+                    newinput = open(os.devnull, "r")
+                setattr(sys, attr, newinput)
+
+    @staticmethod
+    def __redirect_outputs(stream):
+        outputs = ('stdout', '__stdout__', 'stderr', '__stderr__')
+        newoutput = None
+        for attr in outputs:
+            if getattr(sys, attr) is stream:
+                if newoutput is None:
+                    newoutput = open(os.devnull, "w")
+                setattr(sys, attr, newoutput)
 
     def __del__(self):
         # this is called from garbage collection
@@ -540,20 +573,7 @@ class PipeStream(Stream):
 
         :returns: a :class:`PipeStream` instance
         """
-        sys.stdout.flush()
-        stdin = open(sys.stdin.fileno(), "rb", buffering=0)
-        stdout = open(sys.stdout.fileno(), "wb", buffering=0)
-        pipestream = cls(stdin, stdout)
-        newstdin = open(os.devnull, "r")
-        if sys.__stdin__ is sys.stdin:
-            sys.__stdin__ = newstdin
-        sys.stdin = newstdin
-        newstdout = open(os.devnull, "w")
-        if sys.__stdout__ is sys.stdout:
-            sys.__stdout__ = newstdout
-        sys.stdout = newstdout
-
-        return pipestream
+        return cls(sys.stdin, sys.stdout)
 
     @classmethod
     def create_pair(cls):
