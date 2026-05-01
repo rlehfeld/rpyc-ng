@@ -1,3 +1,9 @@
+7.0.15
+======
+Date: 2026-05-01
+
+- Fixes some smaller findings especially with usage of PipeStream
+
 7.0.14
 ======
 Date: 2026-04-19
