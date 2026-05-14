@@ -44,5 +44,5 @@ Documentation can be found at https://rpyc-ng.readthedocs.io
    :alt:               Build Status
 
 .. |License| image::   https://img.shields.io/pypi/l/rpyc-ng.svg?style=flat
-   :target:            https://github.com/rlehfeld/rpyc-ng/blob/main/LICENSE
+   :target:            https://github.com/rlehfeld/rpyc-ng/blob/main/LICENSE.txt
    :alt:               License: MIT

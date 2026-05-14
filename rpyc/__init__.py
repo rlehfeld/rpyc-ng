@@ -1,5 +1,5 @@
 """Remote Python Call (RPyC) is a transparent and symmetric distributed computing library
-Licensed under the MIT license (see `LICENSE` file)
+Licensed under the MIT license (see `LICENSE.txt` file)
 
 Usage::
 
